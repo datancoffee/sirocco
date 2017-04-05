@@ -1,0 +1,31 @@
+Sirocco Sentiment Analysis Framework
+
+Copyright 2008 and onwards Sergei Sokolenko, 
+Alexey Shevchuk, Sergey Shevchook, and
+Roman Khnykin.
+
+This product includes software developed at 
+Cuesense 2008-2011 (http://www.cuesense.com/).
+
+This product includes software developed by
+Sergei Sokolenko (@datancoffee) 2008-2017.
+
+Parts of this product were translated from C# 
+to Java using the CS2J library developed by 
+Rustici Software, LLC, and Kevin Glynn and 
+released under the Apache 2.0 license. 
+Their NOTICE file reads as follows:
+=============================================
+CS2J Library
+Copyright 2007-2013 Rustici Software, LLC
+Copyright 2010-2013 Kevin Glynn (kevin.glynn@twigletsoftware.com)
+
+This product includes software developed by
+Rustici Software, LLC (http://www.scorm.com/) 
+and Kevin Glynn (http://www.twigletsoftware.com).
+=============================================
+
+
+
+
+
