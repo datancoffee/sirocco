@@ -1,8 +1,12 @@
 /*******************************************************************************
- * 	Copyright 2008-2011 Sergei Sokolenko, Alexey Shevchuk, 
+ * 	Copyright 2008 and onwards Sergei Sokolenko, Alexey Shevchuk, 
  * 	Sergey Shevchook, and Roman Khnykin.
  *
- * 	Copyright 2011 and onwards Sergei Sokolenko (@datancoffee).
+ * 	This product includes software developed at 
+ * 	Cuesense 2008-2011 (http://www.cuesense.com/).
+ *
+ * 	This product includes software developed by
+ * 	Sergei Sokolenko (@datancoffee) 2008-2017.
  *
  * 	Licensed under the Apache License, Version 2.0 (the "License");
  * 	you may not use this file except in compliance with the License.
