@@ -71,12 +71,16 @@ public class Sentiment
 	public Integer stProfane; 
 	public Integer stUnsafe;
 
+	@Nullable public String mainWebResourceHash;
+	@Nullable public String parentWebResourceHash;
+	
 	@Nullable public SentimentTag[] tags; 
 	
     public Sentiment() {
     }
     
-    public void initialize(String documentHash, Long documentTime, Integer documentDateId, LabelledText lt, TextTag[] wrTags) {
+    public void initialize(String documentHash, Long documentTime, Integer documentDateId, 
+    		LabelledText lt, TextTag[] wrTags, String mainWebResourceHash, String parentWebResourceHash) {
 
     	this.documentHash = documentHash;
     	this.documentTime = documentTime;
@@ -119,6 +123,9 @@ public class Sentiment
         this.stSentiment = LangUtils.getIntValue(lt.AggregateSentiment,SentimentDimension.GeneralSentiment);
         this.stProfane = LangUtils.getIntValue(lt.AggregateSentiment,SentimentDimension.Profane);
         this.stUnsafe = LangUtils.getIntValue(lt.AggregateSentiment,SentimentDimension.Unsafe);
+        
+    	this.mainWebResourceHash = mainWebResourceHash;
+    	this.parentWebResourceHash = parentWebResourceHash;
         
         this.tags = new SentimentTag[lt.ContainedEntities.size()];
         

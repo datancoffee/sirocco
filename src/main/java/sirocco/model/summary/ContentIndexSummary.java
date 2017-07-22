@@ -30,6 +30,7 @@ import CS2JNet.System.Collections.LCC.CSList;
 import sirocco.indexer.IndexingConsts;
 import sirocco.model.LabelledText;
 import sirocco.model.TextTag;
+import sirocco.util.HashUtils;
 
 
 public class ContentIndexSummary   
@@ -44,8 +45,12 @@ public class ContentIndexSummary
 			String documentCollectionId, String collectionItemId,
 			String title, String author, String text,
 			IndexingConsts.ContentType contentType, IndexingConsts.ParseDepth contentParseDepth, String language,
-			TextTag[] topTags, CSList<LabelledText> topSentiments) {
+			TextTag[] topTags, CSList<LabelledText> topSentiments, String parentUrl, Long parentPubTime) {
 
+		// calculate the Parent Web Resource Hash, if available
+		String parentWebResourceHash = ((parentUrl != null && parentPubTime != null)) ? 
+			HashUtils.getSHA1HashBase64(parentPubTime + parentUrl) : null;
+		
 		// Create Document
 		this.doc = new Document();
 		this.doc.initialize(publicationTime, processingTime, 
@@ -58,13 +63,19 @@ public class ContentIndexSummary
 		this.wr = new WebResource();
 		this.wr.initialize(url, publicationTime, processingTime, 
 				this.doc.documentHash, documentCollectionId,  collectionItemId,
-				title, author);
-
+				title, author, parentWebResourceHash);
+		
+		// Adjust the document record
+		this.doc.mainWebResourceHash = this.wr.webResourceHash;
+		this.doc.parentWebResourceHash = parentWebResourceHash;
+		
 		// Create Sentiments
 		this.sentiments = new Sentiment[topSentiments.size()];
 		for (int i = 0; i < topSentiments.size(); i++) {
 			this.sentiments[i] = new Sentiment();
-			this.sentiments[i].initialize(this.doc.documentHash,this.doc.publicationTime,this.doc.publicationDateId, topSentiments.get(i), topTags);
+			this.sentiments[i].initialize(this.doc.documentHash,this.doc.publicationTime,
+					this.doc.publicationDateId, topSentiments.get(i), topTags,
+					this.doc.mainWebResourceHash, this.doc.parentWebResourceHash);
 		}
 
 	}

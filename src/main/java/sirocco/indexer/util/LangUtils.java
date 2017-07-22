@@ -28,7 +28,6 @@ package sirocco.indexer.util;
 
 import CS2JNet.JavaSupport.language.RefSupport;
 import CS2JNet.System.Collections.LCC.CSList;
-import CS2JNet.System.ObjectSupport;
 import CS2JNet.System.StringSupport;
 import CS2JNet.System.Text.EncodingSupport;
 import opennlp.tools.parser.Parse;
@@ -37,7 +36,9 @@ import sirocco.indexer.DerivationStep;
 import sirocco.indexer.FloatVector;
 import sirocco.indexer.Language;
 
+import java.nio.charset.StandardCharsets;
 import org.apache.commons.codec.binary.Base64;
+
 
 public class LangUtils   
 {
@@ -349,12 +350,12 @@ public class LangUtils
         {
             byte[] encData_byte = new byte[data.length()];
             encData_byte = EncodingSupport.GetEncoder("UTF-8").getBytes(data);
-            String encodedData = Base64.encodeBase64String(encData_byte);
-            return encodedData;
+            byte[] encodedData_byte = Base64.encodeBase64(encData_byte);
+            return new String(encodedData_byte, StandardCharsets.UTF_8);
         }
         catch (Exception e)
         {
-            throw new Exception("Error in Base64Encode" + e.getMessage());
+            throw new Exception("Error in base64Encode" + e.getMessage());
         }
     
     }

@@ -82,7 +82,7 @@ public class StructuredSplitter
          
     }
 
-    public static String[] splitIntoParagraphs(String text, IndexingConsts.IndexingType indexingType) throws Exception {
+    public static String[] splitIntoParagraphs(String text, IndexingConsts.ContentType contentType) throws Exception {
         // split in paragraphs first
         String[] delims = new String[]{ "\r\n", "\n" };
         String[] origParagraphs = StringSupport.Split(text, delims, StringSplitOptions.None);
@@ -97,7 +97,7 @@ public class StructuredSplitter
             if (StringSupport.isNullOrEmpty(paragraph))
                 continue;
              
-            if (indexingType == IndexingConsts.IndexingType.TEXT)
+            if (IndexingConsts.lstCleanTextContentTypes.contains(contentType)) // if it's clean text
             {
                 isGoodAsBeginning[idx] = true;
                 isGoodAsInside[idx] = true;
@@ -112,7 +112,7 @@ public class StructuredSplitter
             } 
         }
         CSList<String> resParagraphs = new CSList<String>();
-        if (indexingType == IndexingConsts.IndexingType.TEXT)
+        if (IndexingConsts.lstCleanTextContentTypes.contains(contentType))
         {
             for (int idx = 0;idx < origParagraphs.length;idx++)
                 if (isGoodAsInside[idx])

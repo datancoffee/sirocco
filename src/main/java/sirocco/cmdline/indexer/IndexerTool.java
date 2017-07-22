@@ -65,6 +65,7 @@ public class IndexerTool extends BasicCmdLineTool {
     File dictInFile = params.getInputFile();
     File dictOutFile = params.getOutputFile();
     Charset encoding = params.getEncoding();
+    IndexingConsts.IndexingType indexingType =  IndexingConsts.IndexingType.valueOf(params.getIndexingType());
 
     CmdLineUtil.checkInputFile("input file of the document to be indexed", dictInFile);
     CmdLineUtil.checkOutputFile("output file with sentiment index", dictOutFile);
@@ -81,7 +82,7 @@ public class IndexerTool extends BasicCmdLineTool {
       String inputFileContents = IOUtils.toString(in);
       long now = System.currentTimeMillis();
       ContentIndex contentindex = new ContentIndex(inputFileContents,
-    		  IndexingConsts.IndexingType.TEXT,
+    		  indexingType,
               IndexingConsts.ContentType.ARTICLE,
               now);
       

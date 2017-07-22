@@ -30,6 +30,7 @@ import java.io.File;
 
 import opennlp.tools.cmdline.ArgumentParser.ParameterDescription;
 import opennlp.tools.cmdline.params.EncodingParameter;
+import sirocco.indexer.IndexingConsts;
 
 /**
  * Params for Dictionary tools.
@@ -38,10 +39,14 @@ import opennlp.tools.cmdline.params.EncodingParameter;
  */
 interface IndexerParams extends EncodingParameter {
 
-  @ParameterDescription(valueName = "in", description = "Name of file with input document to be indexed.")
+  @ParameterDescription(valueName = "inputFile", description = "Name of file with input document to be indexed.")
   File getInputFile();
 
-  @ParameterDescription(valueName = "out", description = "Name of file with the output sentiment index.")
+  @ParameterDescription(valueName = "outputFile", description = "Name of file with the output sentiment index.")
   File getOutputFile();
+  
+  @ParameterDescription(valueName = "indexingType", description = "Indexing type: TOPSENTIMENTS, FULLINDEX.")
+  String getIndexingType();
+  
 
 }

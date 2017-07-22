@@ -61,6 +61,8 @@ public class LogUtils
         {
             printStats(taskID,contentindex,sb);
             sb.append(System.lineSeparator());
+            printAttributes(taskID,contentindex,sb);
+            sb.append(System.lineSeparator());
             printTags(taskID,contentindex.TopTags,sb);
             sb.append(System.lineSeparator());
             printTopSentiments(taskID,contentindex,sb);
@@ -68,10 +70,14 @@ public class LogUtils
             printLinks(taskID,contentindex.getLinks(),sb);
             sb.append(System.lineSeparator());
             printString(taskID,contentindex.getFullAnnotatedText(true),"FULL ANNOTATED TEXT",sb);
+            sb.append(System.lineSeparator());
+            printString(taskID,contentindex.OriginalText,"FULL ORIGINAL TEXT",sb);
         }
         else
         {
             printStats(taskID,contentindex,sb);
+            sb.append(System.lineSeparator());
+            printAttributes(taskID,contentindex,sb);
             sb.append(System.lineSeparator());
             printTags(taskID,contentindex.TopTags,sb);
             sb.append(System.lineSeparator());
@@ -83,13 +89,13 @@ public class LogUtils
 
     public static void printTopSentiments(long taskID, ContentIndex contentindex, StringBuilder sb) throws Exception {
         sb.append(("TOP SENTIMENTS Begin:") + System.getProperty("line.separator"));
-        if (contentindex.TopSentiments == null)
+        if (contentindex.SelectedSentiments == null)
             return ;
          
         BriefLogTextAnnotator annotator = new BriefLogTextAnnotator();
-        for (int i = 0;i < contentindex.TopSentiments.size();i++)
+        for (int i = 0;i < contentindex.SelectedSentiments.size();i++)
         {
-            LabelledText ltext = contentindex.TopSentiments.get(i);
+            LabelledText ltext = contentindex.SelectedSentiments.get(i);
             sb.append("Sentiment {" + i + "} Tags: ");
             sb.append(LangUtils.printStringList(ltext.ContainedEntities,", "));
             sb.append(System.lineSeparator());
@@ -117,6 +123,17 @@ public class LogUtils
         printOperationTime(contentindex.ActionTimestamps,"Index",sb);
         printOperationTime(contentindex.ActionTimestamps,"Chunk",sb);
         printOperationTime(contentindex.ActionTimestamps,"Parse",sb);
+    }
+
+    public static void printAttributes(long taskID, ContentIndex contentindex, StringBuilder sb) throws Exception {
+    	printString(taskID,  contentindex.Url,"URL",sb);
+    	printLong(taskID,  contentindex.PublicationTime,"PublicationTime",sb);
+    	printString(taskID,  contentindex.Title,"Title",sb);
+    	printString(taskID,  contentindex.Author,"Author",sb);
+    	printString(taskID,  contentindex.DocumentCollectionId,"DocumentCollectionId",sb);
+    	printString(taskID,  contentindex.CollectionItemId,"CollectionItemId",sb);
+    	printString(taskID,  contentindex.ParentUrl,"ParentUrl",sb);
+    	printLong(taskID,  contentindex.ParentPubTime,"ParentPubTime",sb);
     }
 
     private static void printOperationTime(HashMap<String,Date> timestamps, String operation, StringBuilder sb) throws Exception {
@@ -157,11 +174,20 @@ public class LogUtils
             sb.append(String.format(StringSupport.CSFmtStrToJFmtStr("{0}\r\n"),link));
     }
 
-    public static void printString(long taskID, String text, String label, StringBuilder sb) throws Exception {
-        sb.append((label + " Begin:") + System.getProperty("line.separator"));
+    public static void printString(long taskID, String text, StringBuilder sb) throws Exception {
         if (!StringSupport.isNullOrEmpty(text))
             sb.append((text) + System.getProperty("line.separator"));
          
+    }
+
+    public static void printString(long taskID, String text, String label, StringBuilder sb) throws Exception {
+        sb.append((label + " Begin:") + System.getProperty("line.separator"));
+        printString(taskID, text, sb);
+    }
+
+    public static void printLong(long taskID, Long number, String label, StringBuilder sb) throws Exception {
+    	String text = (number == null) ? null : number.toString();
+        printString(taskID, text, label, sb);
     }
 
     public static void logSummary(String text) throws Exception {
@@ -181,9 +207,9 @@ public class LogUtils
             sb.append(String.format(StringSupport.CSFmtStrToJFmtStr("insert into WebResourceTags (ID, WebResourceID, Tag, DicTagID) " + "values (<ID> , <WebResourceID>, '{0}', <DicTagID>);\r\n"),tag.getWord()));
         }
         sb.append(System.lineSeparator());
-        for (int i = 0;i < contentindex.TopSentiments.size();i++)
+        for (int i = 0;i < contentindex.SelectedSentiments.size();i++)
         {
-            LabelledText ltext = contentindex.TopSentiments.get(i);
+            LabelledText ltext = contentindex.SelectedSentiments.get(i);
             String valText = ltext.Text;
             String valLabelledPositions = ltext.LabelledPositions.stringSerialize();
             /* test code

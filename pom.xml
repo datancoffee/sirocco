@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>sirocco.sirocco-sa</groupId>
   <artifactId>sirocco-sa</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.1</version>
   <packaging>jar</packaging>
   <name>Sirocco Sentiment Analysis</name>
   <description>The sentiment analysis SDK</description>
@@ -23,7 +23,7 @@
       <plugin>
       	<groupId>org.apache.maven.plugins</groupId>
       	<artifactId>maven-shade-plugin</artifactId>
-      	<version>2.3</version>
+      	<version>3.0.0</version>
         <executions>
           <execution>
             <phase>package</phase>
@@ -40,12 +40,33 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>1.4.1</version>
+        <executions>
+          <execution>
+            <id>enforce</id>
+            <configuration>
+              <rules>
+                <!-- Disabling after resolving most important convergence errors -->
+                <dependencyConvergence/>
+              </rules>
+            </configuration>
+            <goals>
+              <!-- --> 
+              <goal>enforce</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      
     </plugins>
     <resources>
     </resources>      
   </build>
+  
   <dependencies>
-
     <dependency>
     	<groupId>sirocco.sirocco-mo</groupId>
     	<artifactId>sirocco-mo</artifactId>
@@ -93,12 +114,12 @@
 	<dependency>
     	<groupId>commons-beanutils</groupId>
     	<artifactId>commons-beanutils</artifactId>
-    	<version>1.9.2</version>
+    	<version>1.9.3</version>
 	</dependency>
 	<dependency>
 		<groupId>org.apache.avro</groupId>
 		<artifactId>avro</artifactId>
-		<version>1.7.7</version>
+		<version>1.8.1</version>
 	</dependency>	
   </dependencies>
 </project>

@@ -67,13 +67,13 @@ public class ContentIndex
      */
     public String OriginalText;
     /**
-     * IndexingType (required): Is the Original Text the plain text extract of a web page, or is it a regular text
+     * IndexingType (required): Full Index or just top sentiments
      */
     public IndexingConsts.IndexingType IndexingType;
     /**
-     * CueType (required)
+     * ContentType (required): Is it shorttext or article, is it plain text extract of a web page, or is it a regular text
      */    
-    public IndexingConsts.ContentType CueType;
+    public IndexingConsts.ContentType ContentType;
     /**
      * ProcessingTime (required)
      */    
@@ -91,6 +91,10 @@ public class ContentIndex
     
     public String CollectionItemId;
     
+    public String ParentUrl;
+    
+    public Long ParentPubTime;
+    
     /****************/
     /* Intermediate results of indexing */
     public String Language;
@@ -104,7 +108,7 @@ public class ContentIndex
     /****************/
     /* Final results of indexing */
     public TextTag[] TopTags;
-    public CSList<LabelledText> TopSentiments;
+    public CSList<LabelledText> SelectedSentiments;
 
     /**
      * Temporary performance stats.
@@ -115,15 +119,17 @@ public class ContentIndex
     
     public ContentIndex(String content, IndexingConsts.IndexingType indexingType, 
     		IndexingConsts.ContentType cueType, Long processingTime)  {
-        this(content, indexingType, cueType,processingTime, null,null,null,null, null, null);
+        this(content, indexingType, cueType,processingTime, null,null,null,null, null, null, null, null);
     }
     
     public ContentIndex(String content, IndexingConsts.IndexingType indexingType, 
     		IndexingConsts.ContentType cueType, Long processingTime,
-    	    String url, Long publicationTime,  String title, String author, String documentCollectionId, String collectionItemId)  {
+    	    String url, Long publicationTime,  String title, String author, 
+    	    String documentCollectionId, String collectionItemId,
+    	    String parentUrl, Long parentPubTime)  {
         this.OriginalText = content;
         this.IndexingType = indexingType;
-        this.CueType = cueType;
+        this.ContentType = cueType;
         this.ProcessingTime = processingTime; 
         this.Url = url;
         this.PublicationTime = publicationTime;
@@ -131,6 +137,8 @@ public class ContentIndex
         this.Author = author;
         this.DocumentCollectionId = documentCollectionId;
         this.CollectionItemId = collectionItemId;
+        this.ParentUrl = parentUrl;
+        this.ParentPubTime = parentPubTime;
     }
 
     /**
@@ -143,7 +151,8 @@ public class ContentIndex
     	summary.initialize(this.Url, this.PublicationTime, this.ProcessingTime, 
     		this.DocumentCollectionId, this.CollectionItemId,
     		this.Title, this.Author, 
-    		this.OriginalText, this.CueType, this.ContentParseDepth, this.Language, this.TopTags, this.TopSentiments);
+    		this.OriginalText, this.ContentType, this.ContentParseDepth, this.Language, this.TopTags, 
+    		this.SelectedSentiments, this.ParentUrl, this.ParentPubTime);
 
     	return summary;
     }

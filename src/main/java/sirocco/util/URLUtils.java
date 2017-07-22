@@ -30,7 +30,7 @@ import java.net.URISyntaxException;
 
 public class URLUtils {
 
-
+	public static final String UNKNOWN_DOMAIN = "<unknown_domain>";
 	
 	/**
 	 * Will take a url such as http://www.stackoverflow.com and return stackoverflow.com.
@@ -45,9 +45,15 @@ public class URLUtils {
 		try {
 	    	URI uri = new URI(url);
 	    	String domain = uri.getHost();
-	    	result = domain.startsWith("www.") ? domain.substring(4) : domain;
+	    	
+	    	if (domain != null)
+	    		result = domain.startsWith("www.") ? domain.substring(4) : domain;
+	    	else
+	    		result = UNKNOWN_DOMAIN;
 	    } catch (URISyntaxException e) {
 	    	result = getHost(url);
+		} catch (Exception e) {
+			result = UNKNOWN_DOMAIN;
 		}
 		return result;
 	}	

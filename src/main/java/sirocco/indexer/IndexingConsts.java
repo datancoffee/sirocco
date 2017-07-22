@@ -26,21 +26,10 @@
 
 package sirocco.indexer;
 
+import CS2JNet.System.Collections.LCC.CSList;
 
 public class IndexingConsts
 {
-	public enum IndexingType
-	{
-	    TEXT (0),
-	    WEBPAGE (1);
-	
-	    private final int val;
-	
-	    IndexingType(int v) {
-	        this.val = v;
-	    }   	
-	
-	}
 	
 	public enum ParseDepth
 	{
@@ -53,16 +42,43 @@ public class IndexingConsts
 	    ParseDepth(int v) {
 	        this.val = v;
 	    }   	
-		
-		
 	}	
+
+	/**
+	 * Instructions what the output of the indexing should be
+	 * @author sezok
+	 *
+	 */
+	public enum IndexingType
+	{
+	    TOPSENTIMENTS (0),
+	    FULLINDEX (1);
 	
+	    private final int val;
+	
+	    IndexingType(int v) {
+	        this.val = v;
+	    }   	
+	
+	}
+
+	/**
+	 * Content type can be a predictor of how people write sentences, for example, don't 
+	 * use proper grammar.
+	 * 
+	 * This enum is a combination of length/grammar (shorttext, article) and extraction 
+	 * context (from a webpage, where it can be surrounded by "bad" navigational paragraphs 
+	 * 
+	 * @author sezok
+	 *
+	 */
 	public enum ContentType
     {
         // WARNING! Do not remove unused values
         UNKNOWN (0),
         SHORTTEXT (1), // Short messages like Twitter or SMS, usually less than 140 chars
-        ARTICLE (2); // long articles, usually longer than 140 chars.
+        ARTICLE (3), // long articles, usually longer than 140 chars.
+        ARTICLE_WEBPAGE(4); 
     	
         private final int val;
         ContentType(int v) {
@@ -85,6 +101,11 @@ public class IndexingConsts
            this.val = v;
    		}  
    }   
+   
+   public final static CSList<ContentType> lstCleanTextContentTypes = new CSList<ContentType>(new ContentType[]{ ContentType.SHORTTEXT, ContentType.ARTICLE });
+   public final static CSList<ContentType> lstWebpageContentTypes = new CSList<ContentType>(new ContentType[]{ ContentType.ARTICLE_WEBPAGE });
+   public final static CSList<ContentType> lstArticleContentTypes = new CSList<ContentType>(new ContentType[]{ ContentType.ARTICLE, ContentType.ARTICLE_WEBPAGE });
+   
 	
 }
 

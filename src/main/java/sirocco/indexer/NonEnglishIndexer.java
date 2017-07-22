@@ -79,8 +79,8 @@ public class NonEnglishIndexer  extends LanguageSpecificIndexer
         LabelledText ltext = new LabelledText();
         ltext.Text = shortsummary;
         ltext.LabelledPositions = new LabelledPositionsV2();
-        contentindex.TopSentiments = new CSList<LabelledText>();
-        contentindex.TopSentiments.add(ltext);
+        contentindex.SelectedSentiments = new CSList<LabelledText>();
+        contentindex.SelectedSentiments.add(ltext);
     }
 
     private HashMap<String,TextTag> calculateFrequencyStats(Document document, String[] words, RefSupport<String> summary) throws Exception {

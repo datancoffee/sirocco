@@ -40,7 +40,7 @@ public class Indexer
     */
     public static void index(ContentIndex contentindex) throws Exception {
         // need to split into clean paragraphs before determining language
-        String[] paragraphs = StructuredSplitter.splitIntoParagraphs(contentindex.OriginalText,contentindex.IndexingType);
+        String[] paragraphs = StructuredSplitter.splitIntoParagraphs(contentindex.OriginalText,contentindex.ContentType);
         if (paragraphs.length == 0)
             return ;
          

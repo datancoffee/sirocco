@@ -59,6 +59,8 @@ public class Document
 	@Nullable public String author; // Person who claims authorship of the resource, if we can determine it
 	@Nullable public String text;
 	@Nullable public DocumentTag[] tags; // Tags of the Web Resource
+	@Nullable public String mainWebResourceHash;
+	@Nullable public String parentWebResourceHash;
 
     public Document() {}
     

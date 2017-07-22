@@ -159,5 +159,8 @@ public final class CLI {
 
       System.exit(e.getCode());
     }
+    
+    System.out.println("Completed!");
+    System.exit(1);
   }
 }

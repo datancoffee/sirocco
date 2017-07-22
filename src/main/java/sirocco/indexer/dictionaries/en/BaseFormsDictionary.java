@@ -28,8 +28,8 @@ package sirocco.indexer.dictionaries.en;
 
 import CS2JNet.System.Collections.LCC.CSList;
 import net.sf.extjwnl.data.POS;
-import net.sf.extjwnl.dictionary.MorphologicalProcessor;
 import net.sf.extjwnl.dictionary.Dictionary;
+import net.sf.extjwnl.dictionary.morph.Util;
 
 import sirocco.config.ConfigurationManager;
 import sirocco.indexer.StringVector;
@@ -42,6 +42,13 @@ import java.util.List;
 
 public class BaseFormsDictionary   
 {
+	/* 
+	 * Lemmas should typically have not more than 1 tokenizer (e.g. - or <space>), but
+	 * sometimes we get lemma calls that contain emoji or links that end up with dozens
+	 * of tokenizers, which leads to extra-long processing
+	 */
+	private static final int MAX_ALLOWED_TOKENIZERS_IN_LEMMA = 4;  
+	
     private BaseformOverrideDictionary BaseformOverrides;
     private Dictionary wnDict = null;
     private HashMap<String,CSList<String>> bfDict = null;
@@ -88,15 +95,23 @@ public class BaseFormsDictionary
             {
                 if (supportedPartsOfSpeech.contains(fullpos))
                 {
-                	POS fullposobj = POS.getPOSForLabel(fullpos);
-                    List<String> bf = (List<String>) wnDict.getMorphologicalProcessor().lookupAllBaseForms(fullposobj,lowercaseLemma);
-                    if (bf.size() > 0)
-                    {
-                    	String[] bfa = bf.toArray(new String [bf.size()]);
-                        result = new CSList<String>(bfa);
-                    }
-                    else
-                        result = new CSList<String>(new String[]{ lowercaseLemma }); 
+                	// sso 7/9/2017: Verify that the lemma is an actual word and not just a random string
+                	// before calling wnDict.getMorphologicalProcessor().lookupAllBaseForms()
+                	String[] tokens = Util.split(lowercaseLemma);
+                	if (tokens.length > MAX_ALLOWED_TOKENIZERS_IN_LEMMA) {
+                		result = new CSList<String>(new String[]{ lowercaseLemma }); 
+                	} else {
+                	
+	                	POS fullposobj = POS.getPOSForLabel(fullpos);
+	                    List<String> bf = (List<String>) wnDict.getMorphologicalProcessor().lookupAllBaseForms(fullposobj,lowercaseLemma);
+	                    if (bf.size() > 0)
+	                    {
+	                    	String[] bfa = bf.toArray(new String [bf.size()]);
+	                        result = new CSList<String>(bfa);
+	                    }
+	                    else
+	                        result = new CSList<String>(new String[]{ lowercaseLemma });
+                	}
                 }
                 else
                 {

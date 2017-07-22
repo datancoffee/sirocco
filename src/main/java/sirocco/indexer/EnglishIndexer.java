@@ -188,7 +188,7 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
         selectTopTags(contentindex);
         buildLabelledSentences(contentindex);
         chunkLabelledSentences(contentindex);
-        selectTopSentiments(contentindex);
+        selectSentiments(contentindex);
         contentindex.ActionTimestamps.put("Index:stop", Calendar.getInstance().getTime());
     }
 
@@ -493,7 +493,8 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
 
     private void chunkLabelledSentences(ContentIndex contentindex) throws Exception {
     	
-    	if (contentindex.CueType == IndexingConsts.ContentType.UNKNOWN || contentindex.CueType != IndexingConsts.ContentType.SHORTTEXT)
+    	if (contentindex.ContentType == IndexingConsts.ContentType.UNKNOWN || 
+    		IndexingConsts.lstArticleContentTypes.contains(contentindex.ContentType))
             chunkByCompatibility(contentindex);
         else
             chunkInOne(contentindex); 
@@ -599,18 +600,32 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
         contentindex.ChunkedSentences = chunks;
     }
 
-    private void selectTopSentiments(ContentIndex contentindex) throws Exception {
-        CSList<LabelledText> sorted = new CSList<LabelledText>(contentindex.ChunkedSentences);
-        Collections.sort(sorted, new LabelledTextRelevanceComparer());
-        int sentimentnum = (sorted.size() < ContentIndex.MaxTopSentiments) ? sorted.size() : ContentIndex.MaxTopSentiments;
-        CSList<LabelledText> toplist = new CSList<LabelledText>();
-        for (int i = 0;i < sentimentnum;i++)
-        {
-            int idx = sorted.size() - i - 1;
-            buildText(contentindex,sorted.get(idx));
-            toplist.add(sorted.get(idx));
-        }
-        contentindex.TopSentiments = toplist;
+    private void selectSentiments(ContentIndex contentindex) throws Exception {
+    	
+    	if (contentindex.IndexingType == IndexingConsts.IndexingType.FULLINDEX) {
+    		// If a full index is desired, just take the ChunkedSentences, which should
+    		// be in the order of the sentences in text
+    		
+            CSList<LabelledText> selected = new CSList<LabelledText>(contentindex.ChunkedSentences);
+            for (int i = 0;i < selected.size();i++)
+            {
+                buildText(contentindex,selected.get(i));
+            }
+            contentindex.SelectedSentiments = selected;
+            
+    	} else if (contentindex.IndexingType == IndexingConsts.IndexingType.TOPSENTIMENTS) {
+            CSList<LabelledText> sorted = new CSList<LabelledText>(contentindex.ChunkedSentences);
+            Collections.sort(sorted, new LabelledTextRelevanceComparer());
+            int sentimentnum = (sorted.size() < ContentIndex.MaxTopSentiments) ? sorted.size() : ContentIndex.MaxTopSentiments;
+            CSList<LabelledText> toplist = new CSList<LabelledText>();
+            for (int i = 0;i < sentimentnum;i++)
+            {
+                int idx = sorted.size() - i - 1;
+                buildText(contentindex,sorted.get(idx));
+                toplist.add(sorted.get(idx));
+            }
+            contentindex.SelectedSentiments = toplist;
+    	}
     }
 
     public void fixTokens(String[] rawtokens, SentenceFlags flags, RefSupport<Span[]> spans, RefSupport<String[]> fixedtokens, RefSupport<String> sentence) throws Exception {
@@ -959,6 +974,18 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
             {
                 String lemma = getLemma(posnodes[i]);
                 String type = posnodes[i].getType();
+                
+                // sso 7/8/2017: Links caused extra-long loops
+                if (FloatVector.isIntensityToken(lemma)) {
+                	String posoverride = FloatVector.getDimensionValueFromIntensityToken(lemma,FloatVector.PosOverrideDimension);
+                    String origText = FloatVector.getDimensionValueFromIntensityToken(lemma,FloatVector.OriginalTextDimension);
+                    
+                    if (posoverride != null) 
+                    	type = posoverride;
+                    if (origText != null)
+                    	lemma = origText;
+                }
+                
                 if (!tlProperNouns.contains(type))
                     lemma = lemma.toLowerCase();
                  
