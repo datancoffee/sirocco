@@ -69,6 +69,21 @@ public class HashUtils
         byte[] hash = DigestUtils.sha1(value);
         return IdConverterUtils.convertByteArrayToBase64String(hash,null);
     }
+
+    
+    /**
+    *  Calculates base64(sha1(value)) 
+    *  This string is URL and JSON safe but 35% shorter than the simple SHA1
+    * 
+    *  @param value - string to be hashed
+    *  @return A 21 byte string in base 64. 
+    */
+    public static String getShortHash(String value) {
+        byte[] hash = DigestUtils.sha1(value);
+        byte[] shorterhash = new byte[hash.length]; 
+        
+        return IdConverterUtils.convertByteArrayToBase64String(hash,null);
+    }
     
     
     /**

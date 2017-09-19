@@ -40,9 +40,13 @@ public class EnglishIndexerPool extends ObjectPool<EnglishIndexer>
     
     private static EnglishIndexerPool instance = null;
     public static EnglishIndexerPool getInstance() throws Exception {
-        if (instance == null)
-            instance = new EnglishIndexerPool();
-         
+        if (instance == null) {
+            synchronized (EnglishIndexerPool.class) {
+	            if(instance == null){
+	            	instance = new EnglishIndexerPool();
+	            }
+	        }
+        }
         return instance;
     }
 

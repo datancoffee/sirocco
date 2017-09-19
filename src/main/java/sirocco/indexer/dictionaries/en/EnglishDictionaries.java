@@ -51,8 +51,8 @@ public class EnglishDictionaries
     public EnglishDictionaries() throws Exception {
     	BaseformOverrides = new BaseformOverrideDictionary(getClass().getResourceAsStream("/csdict/bfoverrides-en.csv"));
     	BaseForms = new BaseFormsDictionary(BaseformOverrides);
-        String[] idiomsources = new String[]{ "idioms-en", "profanity-idioms-en" };
-        InputStream[] idiomdictionarystreams = new InputStream[]{ getClass().getResourceAsStream("/csdict/idioms-en.csv"), getClass().getResourceAsStream("/csdict/profanity-idioms-en.csv") };
+        String[] idiomsources = new String[]{ "idioms-en", "profanity-idioms-en", "custom-idioms-en" };
+        InputStream[] idiomdictionarystreams = new InputStream[]{ getClass().getResourceAsStream("/csdict/idioms-en.csv"), getClass().getResourceAsStream("/csdict/profanity-idioms-en.csv"), getClass().getResourceAsStream("/csdict/custom-idioms-en.csv") };
         Idioms = new IdiomDictionary(idiomsources,idiomdictionarystreams);
         Prefixes = new PrefixDictionary(getClass().getResourceAsStream("/csdict/prefixes-en.csv"));
         Abbreviations = new AbbreviationDictionary(getClass().getResourceAsStream("/csdict/abbreviations-en.csv"));
