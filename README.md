@@ -85,8 +85,7 @@ You will also need to add a dependency to the model files
 
 [May 2017 - Opinion Analysis of Text using Plutchik](https://medium.com/@datancoffee/opinion-analysis-of-text-using-plutchik-5119a80229ea)
 
-[April 2017 - Selecting a Java WordNet API for lemma lookups]
-(https://medium.com/@datancoffee/selecting-a-java-wordnet-api-for-lemma-lookups-7fae7a273f91)
+[April 2017 - Selecting a Java WordNet API for lemma lookups](https://medium.com/@datancoffee/selecting-a-java-wordnet-api-for-lemma-lookups-7fae7a273f91)
 
 [April 2017 - Modernizing Sirocco from C# and SharpNLP to Java and Apache OpenNLP](https://medium.com/@datancoffee/modernizing-sirocco-from-c-and-sharpnlp-to-java-and-apache-opennlp-56550ee041b6)
 
