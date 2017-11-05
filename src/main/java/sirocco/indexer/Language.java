@@ -34,6 +34,7 @@ public class Language
 {
     public static String English = "EN";
     public static String Undetermined = "UD";
+    public static String UnindexabeText = "UT";
 }
 
 

@@ -75,9 +75,53 @@ public class Sentiment
 	@Nullable public String parentWebResourceHash;
 	
 	@Nullable public SentimentTag[] tags; 
+	@Nullable public String[] signals; // Signals are shortkeys of idioms, emotions etc.
 	
-    public Sentiment() {
-    }
+    public Sentiment() { }
+    
+	public void initialize(String sentimentHash, String documentHash, Long documentTime, Integer documentDateId,
+			String text, String labelledPositions, String annotatedText, String annotatedHtmlText,
+			Integer sentimentTotalScore, IndexingConsts.SentimentValence dominantValence,
+			Integer stAcceptance, Integer stAnger, Integer stAnticipation, Integer stAmbiguous, Integer stDisgust,
+			Integer stFear, Integer stGuilt, Integer stInterest, Integer stJoy, Integer stSadness, Integer stShame,
+			Integer stSurprise, Integer stPositive, Integer stNegative, Integer stSentiment, Integer stProfane, Integer stUnsafe, 
+			String mainWebResourceHash, String parentWebResourceHash,
+			SentimentTag[] tags, String[] signals) 
+	{
+		this.sentimentHash = sentimentHash;
+		this.documentHash = documentHash;
+		this.documentTime = documentTime;
+		this.documentDateId = documentDateId;
+		this.text = text;
+		this.labelledPositions = labelledPositions;
+		this.annotatedText = annotatedText;
+		this.annotatedHtmlText = annotatedHtmlText;
+		this.sentimentTotalScore = sentimentTotalScore;
+		this.dominantValence = dominantValence;
+		this.stAcceptance = stAcceptance;
+		this.stAnger =  stAnger;
+		this.stAnticipation = stAnticipation; 
+		this.stAmbiguous =  stAmbiguous;
+		this.stDisgust = stDisgust;
+		this.stFear =  stFear;
+		this.stGuilt = stGuilt; 
+		this.stInterest =  stInterest;
+		this.stJoy = stJoy ;
+		this.stSadness = stSadness;  
+		this.stShame = stShame;
+		this.stSurprise = stSurprise;  
+		this.stPositive = stPositive ;
+		this.stNegative =  stNegative;
+		this.stSentiment = stSentiment;  
+		this.stProfane =  stProfane;
+		this.stUnsafe =  stUnsafe;
+		this.mainWebResourceHash = mainWebResourceHash;
+		this.parentWebResourceHash = parentWebResourceHash;
+		this.tags =  tags;
+		this.signals = 	signals;	
+		
+	}
+    
     
     public void initialize(String documentHash, Long documentTime, Integer documentDateId, 
     		LabelledText lt, TextTag[] wrTags, String mainWebResourceHash, String parentWebResourceHash) {
@@ -141,6 +185,13 @@ public class Sentiment
             	}
             }
         }
+        
+        this.signals = new String[lt.getContainedSignalShortkeys().size()];
+        try {
+			lt.getContainedSignalShortkeys().copyTo(this.signals, 0);
+		} catch (Exception e) {
+			// TODO: report to LOGS
+		}
     	
     }
     

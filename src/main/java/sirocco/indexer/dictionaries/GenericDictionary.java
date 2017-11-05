@@ -169,7 +169,7 @@ public class GenericDictionary<TVector extends IGenericVector>
         }
         TVector v = (TVector) vectorFactory.createNewVector();
         String[] fieldnamesarray = fieldnames.toArray(new String[fieldnames.size()]);
-        v.init(fieldnamesarray, vectorfields);
+        v.init(fieldnamesarray, vectorfields,key);
         getWords().put(key, v);
     }
 

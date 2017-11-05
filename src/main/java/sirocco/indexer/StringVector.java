@@ -30,6 +30,7 @@ import CS2JNet.System.Collections.LCC.CSList;
 import sirocco.indexer.DerivationStep;
 import sirocco.indexer.IGenericVector;
 import sirocco.indexer.util.LangUtils;
+import sirocco.util.HashUtils;
 import CS2JNet.System.StringSupport;
 
 import java.util.HashMap;
@@ -39,11 +40,17 @@ public class StringVector extends HashMap<String,String> implements IGenericVect
     public static String DefaultValue = "";
     public static String FlagEnding = "[flag]";
     public HashMap<String,Float> Flags;
-    private HashMap<String,CSList<DerivationStep>> derivationSteps;
+    private HashMap<String,CSList<DerivationStep>> derivationSteps; // Hashmap key is a sentiment dimension
+    private CSList<String> shortkeys; // List of shortkeys (usually, hashes) of idioms, emotion or quality words, interjections etc, that appear in the text
+    
     public HashMap<String,CSList<DerivationStep>> getDerivationSteps() throws Exception {
         return derivationSteps;
     }
 
+    public CSList<String> getShortkeys()  {
+        return shortkeys;
+    }
+    
     private CSList<DerivationStep> dimDerivationSteps(String dimension) throws Exception {
         CSList<DerivationStep> dimlist = getDerivationSteps().get(dimension);
         if (dimlist == null)
@@ -61,7 +68,7 @@ public class StringVector extends HashMap<String,String> implements IGenericVect
         Flags = new HashMap<String,Float>();
     }
 
-    public void init(String[] keys, String[] fields) throws Exception {
+    public void init(String[] keys, String[] fields, String vectorkey) throws Exception {
         for (int i = 0;i < keys.length;i++)
         {
             String value = (StringSupport.isNullOrEmpty(fields[i])) ? DefaultValue : fields[i];
@@ -73,6 +80,8 @@ public class StringVector extends HashMap<String,String> implements IGenericVect
             else
                 this.put(keys[i], value); 
         }
+        String vectorshortkey = HashUtils.getShortkey(vectorkey);
+        shortkeys.add(vectorshortkey);
     }
 
     public String[] getDimensions() throws Exception {

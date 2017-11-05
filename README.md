@@ -75,6 +75,15 @@ You will also need to add a dependency to the model files
 </dependency>
 ```
 
+## How to Run Standard Test Cases
+
+This repo contains a set of blog posts and other text documents that can be used as inputs for verification of changes. The main test script that invokes the Sirocco Indexer is located in the /src/test/scripts/ folder. It runs the indexer through all  files with .txt extensions in the /src/test/resources/in folder and produces outputs in the /src/test/resources/out folder. To run the test script, execute the following command in shell 
+
+```
+./src/test/scripts/runindexer.sh TOPSENTIMENTS
+```
+
+The test script accepts a single parameter - the indexing type. The acceptable values are FULLINDEX and TOPSENTIMENTS. When Top Sentiments is specified, the Indexer will select the top 4 sentence chunks (a few sequential sentences in text that have the same sentiement valence) in input text and output them in the output file. When Full Index is selected, all sentence chunks will be output.
 
 ## Additional Publications and Documentation
 
@@ -96,7 +105,7 @@ You will also need to add a dependency to the model files
 
 ## Want to Help or Get in Touch?
 
-* Get in touch with @datancoffee on [Twitter](https://twitter.com/datancoffee) or [Medium](http://medium.com/datancoffee) if you want to help with the project or need help.
+* Get in touch with @datancoffee on [Twitter](https://twitter.com/datancoffee) or [Medium](http://medium.com/@datancoffee) if you want to help with the project or need help.
 
 
 

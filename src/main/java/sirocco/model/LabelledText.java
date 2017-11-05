@@ -42,15 +42,14 @@ public class LabelledText
     public String Text;
     public LabelledPositionsV2 LabelledPositions;
     public CSList<String> ContainedEntities = new CSList<String>();
+   
     public void addContainedEntity(String entity, int rank) throws Exception {
         if (!ContainedEntities.contains(entity))
         {
             ContainedEntities.add(entity);
             if (ContainedEntityTopRank > rank)
                 ContainedEntityTopRank = rank;
-             
         }
-         
     }
 
     public void addSentence(LabelledSentence lsentence, FloatVector sentiment) throws Exception {
@@ -60,6 +59,11 @@ public class LabelledText
             addContainedEntity(entity,lsentence.ContainedEntityTopRank);
     }
 
+    public CSList<String> getContainedSignalShortkeys()
+    {
+    	return AggregateSentiment.getShortkeys();
+    }
+    
 }
 
 

@@ -35,9 +35,9 @@ public class DerivationStep
 {
     public String Action;
     public Span DerivationSpan;
-    public static String AccumulateAction = "accumulate";
+    public static final String AccumulateAction = "accumulate";
     //public static string MultiplyAction = "multiply";
-    public static String NegateAndMultiplyAction = "negate-multiply";
+    public static final String NegateAndMultiplyAction = "negate-multiply";
     //public static string NeutralizeAction = "neutralize";
     public DerivationStep(String action, Span span)  {
         Action = action;

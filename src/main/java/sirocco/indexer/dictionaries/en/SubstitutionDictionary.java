@@ -32,9 +32,9 @@ import sirocco.indexer.StringVector;
 import sirocco.indexer.StringVectorFactory;
 import sirocco.indexer.dictionaries.GenericDictionary;
 
-public class SubstituitionDictionary  extends GenericDictionary<StringVector> 
+public class SubstitutionDictionary  extends GenericDictionary<StringVector> 
 {
-    public SubstituitionDictionary(InputStream dictionarystream) throws Exception {
+    public SubstitutionDictionary(InputStream dictionarystream) throws Exception {
         super(dictionarystream,new StringVectorFactory());
     }
 

@@ -90,7 +90,11 @@ public class LangUtils
                     neutralCount++;         
             }
         }
-        if ((float)(foreignCount / (float)(latinCount + neutralCount + foreignCount)) > 0.1F)
+        if ( ((float)(neutralCount / (float)(latinCount + neutralCount + foreignCount)) > 0.50F) && (neutralCount > 50) ) 
+        	// too many of neutral chars will cause extreme delays in processing. Also, this is not a real text blurb
+        	//"Too many invalid characters. Latin chars "+latinCount+", Non-latin chars "+foreignCount+", Neutral chars "+neutralCount);
+        	return Language.UnindexabeText;
+        else if ((float)(foreignCount / (float)(latinCount + neutralCount + foreignCount)) > 0.1F)
             return Language.Undetermined;
         else
             return Language.English; 

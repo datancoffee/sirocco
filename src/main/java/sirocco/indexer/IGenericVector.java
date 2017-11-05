@@ -29,7 +29,7 @@ package sirocco.indexer;
 
 public interface IGenericVector   
 {
-    void init(String[] keys, String[] fields) throws Exception ;
+    void init(String[] keys, String[] fields, String vectorkey) throws Exception ;
 
     String[] getDimensions() throws Exception ;
 

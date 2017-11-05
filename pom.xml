@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>sirocco.sirocco-sa</groupId>
   <artifactId>sirocco-sa</artifactId>
-  <version>1.0.3</version>
+  <version>1.0.6</version>
   <packaging>jar</packaging>
   <name>Sirocco Sentiment Analysis</name>
   <description>The sentiment analysis SDK</description>
@@ -70,7 +70,7 @@
     <dependency>
     	<groupId>sirocco.sirocco-mo</groupId>
     	<artifactId>sirocco-mo</artifactId>
-    	<version>[1.0.0,2.0.0)</version>
+    	<version>[1.0.3,2.0.0)</version>
     </dependency>
  	<dependency>
 		<groupId>commons-lang</groupId>

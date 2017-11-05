@@ -109,7 +109,9 @@ public class ContentIndex
     /* Final results of indexing */
     public TextTag[] TopTags;
     public CSList<LabelledText> SelectedSentiments;
-
+    public Boolean IsIndexingSuccessful = false;
+    public String IndexingErrors;
+    
     /**
      * Temporary performance stats.
      */

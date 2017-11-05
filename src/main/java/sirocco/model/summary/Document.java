@@ -69,7 +69,7 @@ public class Document
 			String title, IndexingConsts.ContentType type,
 			String language, IndexingConsts.ParseDepth contentParseDepth, Integer contentLength, 
 			String author, String text,
-			DocumentTag[] tags) {
+			DocumentTag[] tags, String mainWebResourceHash, String parentWebResourceHash ) {
 		this.documentHash = documentHash;
 		this.publicationTime = publicationTime;
 		this.publicationDateId = publicationDateId;
@@ -115,7 +115,7 @@ public class Document
 
 		this.initialize(documentHash, publicationTime, publicationDateId, processingTime, processingDateId,
 				documentCollectionId, collectionItemId,
-				title, contentType, language, contentParseDepth, contentLength, author, text, dTags);
+				title, contentType, language, contentParseDepth, contentLength, author, text, dTags, null, null);
 
 	}    
 	

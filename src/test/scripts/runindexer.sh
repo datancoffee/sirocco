@@ -1,4 +1,16 @@
 
+
+if [ $# -eq 0 ]
+then
+  INDEXINGTYPE="FULLINDEX"
+elif [ "$1" != "FULLINDEX" ] && [ "$1" != "TOPSENTIMENTS" ]
+then
+  echo "Invalid parameter value. Use one of {FULLINDEX | TOPSENTIMENTS}"
+  exit 1
+else
+  INDEXINGTYPE=$1
+fi
+
 MAVEN_OPTS="-Xmx2g -Xss4m"
 
 INPUT_DIR='./src/test/resources/in'
@@ -11,7 +23,7 @@ for f in $(find $INPUT_DIR -name '[^.]*.txt'); do
     #echo $FILENAME $UPPER_DIR $NEWNAME
     mvn exec:java \
         -Dexec.mainClass=sirocco.cmdline.CLI \
-        -Dexec.args="Indexer -inputFile \"$f\" -outputFile \"$NEWNAME\""
+        -Dexec.args="Indexer -inputFile \"$f\" -outputFile \"$NEWNAME\" -indexingType \"$INDEXINGTYPE\""
 
 done
 

@@ -46,10 +46,14 @@ public class Indexer
          
         contentindex.initializeParagraphs(paragraphs);
         contentindex.Language = LangUtils.determineDominantLanguage(paragraphs);
-        if (StringSupport.equals(contentindex.Language, Language.English))
+        if (contentindex.Language.equals(Language.English))
             EnglishIndexerPool.getInstance().index(contentindex);
-        else
+        else if (contentindex.Language.equals(Language.Undetermined))
             NonEnglishIndexerPool.getInstance().index(contentindex); 
+        else {
+        	contentindex.IndexingErrors = "Unindexable Text. Too many invalid characters";
+        	contentindex.IsIndexingSuccessful = false;
+        }
     }
 
     /**

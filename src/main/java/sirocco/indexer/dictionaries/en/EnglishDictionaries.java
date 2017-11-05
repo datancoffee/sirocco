@@ -43,7 +43,7 @@ public class EnglishDictionaries
     public EmotionDictionary Emotions;
     public InterjectionDictionary Interjections;
     public QualityDictionary Qualities;
-    public SubstituitionDictionary Substituitions;
+    public SubstitutionDictionary Substitutions;
     public DegreeAdverbDictionary DegreeAdverbs;
     public ModifierDictionary Modifiers;
     public NegatorDictionary Negators;
@@ -60,7 +60,7 @@ public class EnglishDictionaries
         Emotions = new EmotionDictionary(getClass().getResourceAsStream("/csdict/emotions-en.csv"));
         Interjections = new InterjectionDictionary(getClass().getResourceAsStream("/csdict/interjections-en.csv"));
         Qualities = new QualityDictionary(getClass().getResourceAsStream("/csdict/qualities-en.csv"));
-        Substituitions = new SubstituitionDictionary(getClass().getResourceAsStream("/csdict/substituitions-en.csv"));
+        Substitutions = new SubstitutionDictionary(getClass().getResourceAsStream("/csdict/substitutions-en.csv"));
         DegreeAdverbs = new DegreeAdverbDictionary(getClass().getResourceAsStream("/csdict/degree-adv-en.csv"));
         Modifiers = new ModifierDictionary(getClass().getResourceAsStream("/csdict/modifiers-en.csv"));
         Negators = new NegatorDictionary(getClass().getResourceAsStream("/csdict/negators-en.csv"));

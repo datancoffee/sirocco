@@ -37,7 +37,9 @@ import sirocco.indexer.IndexerLabel;
 import sirocco.indexer.IndexingConsts.SentimentValence;
 import sirocco.indexer.util.LangUtils;
 import sirocco.model.LabelledSpan;
+import sirocco.util.HashUtils;
 
+import java.util.Arrays;
 import java.util.HashMap;
 
 
@@ -46,32 +48,39 @@ import java.util.HashMap;
 */
 public class FloatVector extends HashMap<String,Float> implements IGenericVector
 {
-    public static float DefaultValue = 0.0F;
-    public static float InitialValue = 10.0F;
-    public static String DimensionStart = "@@";
-    public static String ValueStart = "+";
-    public static String ZeroVector = "@@zero";
-    public static String ScoreDimension = "score";
-    public static String NegationDimension = "negation";
-    public static String SlyIronicSarcasticDimension = "sis";
-    public static String EntityDimension = "entity";
-    public static String PosOverrideDimension = "ignposoverride";
-    public static String OriginalTextDimension = "ignorgtxt";
-    public static String IsLinkDimension = "islink";
-    public static String RegexOptionDimension = "regexoption";
-    public static String IsHashTagDimension = "ishashtag";
-    public static String IsIgnoreDimension = "isignore";
-    public static String FlagEnding = "[flag]";
-    public static String KeyEnding = "[key]";
-    public static String IgnoreDimensionStart = "ign";
-    // dimensions with this prefix will be printed in intensitytoken, but will not be deserialized.
-    public static CSList<String> MultiplicativeDimensions = new CSList<String>(new String[]{ ScoreDimension });
+    public static final float DefaultValue = 0.0F;
+    public static final float InitialValue = 10.0F;
+    public static final String DimensionStart = "@@";
+    public static final String ValueStart = "+";
+    public static final String ZeroVector = "@@zero";
+    public static final String ScoreDimension = "score";
+    public static final String NegationDimension = "negation";
+    public static final String SlyIronicSarcasticDimension = "sis";
+    public static final String EntityDimension = "entity";
+    public static final String PosOverrideDimension = "ignposoverride";
+    public static final String OriginalTextDimension = "ignorgtxt";
+    public static final String SignalsDimension = "ignsignals";
+    public static final String IsLinkDimension = "islink";
+    public static final String RegexOptionDimension = "regexoption";
+    public static final String IsHashTagDimension = "ishashtag";
+    public static final String IsIgnoreDimension = "isignore";
+    public static final String FlagEnding = "[flag]";
+    public static final String KeyEnding = "[key]";
+    public static final String IgnoreDimensionStart = "ign";
+    public static final CSList<String> MultiplicativeDimensions = new CSList<String>(new String[]{ ScoreDimension }); // dimensions with this prefix will be printed in intensitytoken, but will not be deserialized.
+
     public HashMap<String,Float> Flags;
-    private HashMap<String,CSList<DerivationStep>> derivationSteps;
+    private HashMap<String,CSList<DerivationStep>> derivationSteps; // Hashmap key is a sentiment dimension 
+    private CSList<String> shortkeys; // List of Signal shortkeys (usually, hashes) of idioms, emotion or quality words, interjections etc, that appear in the text
+    
     public HashMap<String,CSList<DerivationStep>> getDerivationSteps()  {
         return derivationSteps;
     }
 
+    public CSList<String> getShortkeys()  {
+        return shortkeys;
+    }
+   
     private CSList<DerivationStep> dimDerivationSteps(String dimension)  {
         CSList<DerivationStep> dimlist = getDerivationSteps().get(dimension);
         if (dimlist == null)
@@ -87,6 +96,7 @@ public class FloatVector extends HashMap<String,Float> implements IGenericVector
         super();
         derivationSteps = new HashMap<String,CSList<DerivationStep>>();
         Flags = new HashMap<String,Float>();
+        shortkeys = new CSList<String>();
     }
 
     public FloatVector(Span span, String initialDimension)  {
@@ -96,7 +106,7 @@ public class FloatVector extends HashMap<String,Float> implements IGenericVector
         this.accumulate(vector,span,true);
     }
 
-    public void init(String[] keys, String[] fields)  {
+    public void init(String[] keys, String[] fields, String vectorkey)  {
         for (int i = 0;i < keys.length;i++)
         {
             float value = (StringSupport.isNullOrEmpty(fields[i])) ? DefaultValue : InitialValue * Float.parseFloat(fields[i]);
@@ -108,6 +118,8 @@ public class FloatVector extends HashMap<String,Float> implements IGenericVector
             else
                 this.put(keys[i], value); 
         }
+        String vectorshortkey = HashUtils.getShortkey(vectorkey);
+        this.getShortkeys().add(vectorshortkey);
     }
 
     public void initFromIntensityToken(String token)  {
@@ -126,8 +138,18 @@ public class FloatVector extends HashMap<String,Float> implements IGenericVector
                 float value = (StringSupport.isNullOrEmpty(pair[1])) ? DefaultValue : Float.parseFloat(pair[1]);
                 this.put(key, value);
             }
+            else if (dimvalue.startsWith(SignalsDimension)) // import all shortkeys
+            {
+            	String[] pair = StringSupport.Split(dimvalue, vsa, StringSplitOptions.None);
+                if (!StringSupport.isNullOrEmpty(pair[1])) {
+                	String[] ssa = new String[]{ "," };
+                	String[] shortkeyarr = StringSupport.Split(pair[1], ssa, StringSplitOptions.None);
+                	shortkeys.addAll(new CSList<String>(shortkeyarr));
+                }
+            }
              
         }
+
     }
 
     public String[] getDimensions()  {
@@ -147,6 +169,19 @@ public class FloatVector extends HashMap<String,Float> implements IGenericVector
         return retvalue;
     }
 
+    public static String toCSV(CSList<String> sa)  {
+        String retvalue = null;
+        if (sa.size() > 0)
+        {
+            retvalue = "";
+            for (String s : sa)
+                retvalue += (retvalue.isEmpty() ? s : "," + s);
+        }
+         
+        return retvalue;
+    }
+    
+    
     public void accumulate(FloatVector othervector)  {
         accumulate(othervector,(Span)null,true);
     }
@@ -212,6 +247,10 @@ public class FloatVector extends HashMap<String,Float> implements IGenericVector
             }
              
         }
+        
+        // Merge shortkeys
+        this.getShortkeys().addAll(othervector.getShortkeys());
+        
     }
 
     public void removeUnusedCombinationParts()  {
@@ -520,13 +559,13 @@ public class FloatVector extends HashMap<String,Float> implements IGenericVector
             }
             return sb.toString();
         }
-        catch (RuntimeException __dummyCatchVar1)
+        catch (RuntimeException re)
         {
-            throw __dummyCatchVar1;
+            throw re;
         }
-        catch (Exception __dummyCatchVar1)
+        catch (Exception e)
         {
-            throw new RuntimeException(__dummyCatchVar1);
+            throw new RuntimeException(e);
         }
     
     }
@@ -536,6 +575,11 @@ public class FloatVector extends HashMap<String,Float> implements IGenericVector
         for (Entry<String,Float> kvp : this.entrySet())
         {
             sb.append(dimensionToken(kvp.getKey(),String.valueOf(kvp.getValue())));
+        }
+        if (getShortkeys().size() > 0)
+        {
+        	String listofshortkeys=FloatVector.toCSV(getShortkeys());
+        	sb.append(dimensionToken(SignalsDimension,listofshortkeys));
         }
         if (sb.length() == 0)
             sb.append(ZeroVector);

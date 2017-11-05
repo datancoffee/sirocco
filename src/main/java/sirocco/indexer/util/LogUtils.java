@@ -109,6 +109,9 @@ public class LogUtils
             String data = ltext.LabelledPositions.stringSerialize();
             sb.append(data);
             sb.append(System.lineSeparator());
+            sb.append("Sentiment {" + i + "} Signals: ");
+            sb.append(LangUtils.printStringList(ltext.getContainedSignalShortkeys(),", "));
+            sb.append(System.lineSeparator());
         }
     }
 

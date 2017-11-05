@@ -72,17 +72,17 @@ public class HashUtils
 
     
     /**
-    *  Calculates base64(sha1(value)) 
-    *  This string is URL and JSON safe but 35% shorter than the simple SHA1
-    * 
+    *  Calculates a text key 8 characters or shorter. Resulting key is URL and JSON safe.
+    *  Current formula is substr(base64(sha256(value)),1,8), but in the future it
+    *  might start returning the actual input string if it is shorter than 8 chars.
+    *  
     *  @param value - string to be hashed
-    *  @return A 21 byte string in base 64. 
+    *  @return A string in base 64, 8 chars or shorter. 
     */
-    public static String getShortHash(String value) {
-        byte[] hash = DigestUtils.sha1(value);
-        byte[] shorterhash = new byte[hash.length]; 
-        
-        return IdConverterUtils.convertByteArrayToBase64String(hash,null);
+    public static String getShortkey(String value) {
+        byte[] hash = DigestUtils.sha256(value);
+        String hashString = IdConverterUtils.convertByteArrayToBase64String(hash,null);
+        return hashString.substring(0, 8);
     }
     
     

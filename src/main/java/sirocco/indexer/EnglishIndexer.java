@@ -189,6 +189,7 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
         buildLabelledSentences(contentindex);
         chunkLabelledSentences(contentindex);
         selectSentiments(contentindex);
+        contentindex.IsIndexingSuccessful = true;
         contentindex.ActionTimestamps.put("Index:stop", Calendar.getInstance().getTime());
     }
 
@@ -1251,6 +1252,8 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
                     FloatVector parsevector = new FloatVector(parse.getSpan(), SentimentDimension.GeneralSentiment);
                     listvector.getValue().accumulate(parsevector);
                 }
+                FloatVector valueofchunk = mDicts.Modifiers.getWords().get("ADJP_ADVP_chunk");
+                listvector.getValue().accumulate(valueofchunk);
             }
              
         }
@@ -1483,10 +1486,15 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
             vector = dict.getWords().get(bestbaseform + '/' + pos);
             if (vector == null)
                 return null;
-             
-            vector.accumulate(prefixvector);
-            vector.applyNegationAndMultiplication();
-            return vector;
+            
+            // sso 10/19/2017 fix
+        	FloatVector vectorcopy = new FloatVector();
+        	vectorcopy.accumulate(vector);
+            vectorcopy.accumulate(prefixvector);
+            vectorcopy.applyNegationAndMultiplication();
+            return vectorcopy;
+            // end fix
+            
         }
         else if (tokens.length == 1)
         {
