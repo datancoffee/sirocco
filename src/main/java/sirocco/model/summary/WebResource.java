@@ -57,14 +57,14 @@ public class WebResource
 	@Nullable public String domain; // domain of URL
 	@Nullable public String author; // Person who claims authorship of the resource, if we can determine it
 	@Nullable public String parentWebResourceHash; // In threaded conversations, the parent is the previous comment, email, or document
-
+	@Nullable public String[] metaFields; // Source-specific metadata fields
 
     public WebResource() {}
     
 	public void initialize(String webResourceHash, String url, 
 			Long publicationTime, Integer publicationDateId, Long processingTime, Integer processingDateId, 
 			String documentHash, String documentCollectionId, String collectionItemId,
-			String title, String domain, String author, String parentWebResourceHash) {
+			String title, String domain, String author, String parentWebResourceHash, String[] metaFields ) {
 		this.webResourceHash = webResourceHash;
 		this.url = url;
 		this.publicationTime = publicationTime;
@@ -78,13 +78,14 @@ public class WebResource
 		this.domain = domain;
 		this.author = author;
 		this.parentWebResourceHash = parentWebResourceHash;
+		this.metaFields = metaFields;
 
 	}    
     
 	public void initialize(String url, 
 			Long publicationTime, Long processingTime, 
 			String documentHash, String documentCollectionId, String collectionItemId,
-			String title, String author, String parentWebResourceHash) {
+			String title, String author, String parentWebResourceHash, String[] metaFields) {
 
 		// Determine publication time and Date Ids
 		if (publicationTime == null)
@@ -104,7 +105,7 @@ public class WebResource
 		this.initialize(webResourceHash, url, 
 				publicationTime, publicationDateId, processingTime, processingDateId,
 				documentHash, documentCollectionId, collectionItemId,
-				title, domain, author, parentWebResourceHash);
+				title, domain, author, parentWebResourceHash, metaFields);
 
 	}    
     

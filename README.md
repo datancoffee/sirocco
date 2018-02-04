@@ -16,9 +16,11 @@ Sirocco relies on [Apache OpenNLP](https://opennlp.apache.org/) to supply it wit
 Strata NYC 2017 keynote 
 [Emotional arithmetic: How machine learning helps you understand customers in real time](https://conferences.oreilly.com/strata/strata-ny/public/schedule/detail/63895)
 by Chad Jennings from Google showed the results of emotion analysis performed by Sirocco
+[Video Recording](https://www.oreilly.com/ideas/emotional-arithmetic-how-machine-learning-helps-you-understand-customers-in-real-time)
 
 Sirocco was featured in the Strata NYC 2017 deep dive
 [Emotional arithmetic: A deep dive into how machine learning and big data help you understand customers in real time](https://conferences.oreilly.com/strata/strata-ny/public/schedule/detail/63620) by Chad Jennings (Google) and Eric Schmidt (Google)
+[Video Recording](https://www.safaribooksonline.com/library/view/strata-data-conference/9781491976326/video314135.html)
 
 ## Roadmap
 

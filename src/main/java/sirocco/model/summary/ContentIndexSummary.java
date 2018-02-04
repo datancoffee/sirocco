@@ -48,7 +48,7 @@ public class ContentIndexSummary
 			String documentCollectionId, String collectionItemId,
 			String title, String author, String text,
 			IndexingConsts.ContentType contentType, IndexingConsts.ParseDepth contentParseDepth, String language,
-			TextTag[] topTags, CSList<LabelledText> topSentiments, String parentUrl, Long parentPubTime) {
+			TextTag[] topTags, CSList<LabelledText> topSentiments, String parentUrl, Long parentPubTime, String[] metaFields) {
 
 		// calculate the Parent Web Resource Hash, if available
 		String parentWebResourceHash = ((parentUrl != null && parentPubTime != null)) ? 
@@ -66,7 +66,7 @@ public class ContentIndexSummary
 		this.wr = new WebResource();
 		this.wr.initialize(url, publicationTime, processingTime, 
 				this.doc.documentHash, documentCollectionId,  collectionItemId,
-				title, author, parentWebResourceHash);
+				title, author, parentWebResourceHash, metaFields);
 		
 		// Adjust the document record
 		this.doc.mainWebResourceHash = this.wr.webResourceHash;
@@ -102,10 +102,11 @@ public class ContentIndexSummary
 
 		// Create the Web Resource
 		result.wr = new WebResource();
+		String[] metaFields = Arrays.copyOf(this.wr.metaFields, this.wr.metaFields.length);
 		result.wr.initialize(this.wr.webResourceHash, this.wr.url, 
 				this.wr.publicationTime, this.wr.publicationDateId, this.wr.processingTime, this.wr.processingDateId, 
 				this.wr.documentHash, this.wr.documentCollectionId, this.wr.collectionItemId,
-				this.wr.title, this.wr.domain, this.wr.author, this.wr.parentWebResourceHash);
+				this.wr.title, this.wr.domain, this.wr.author, this.wr.parentWebResourceHash, metaFields);
 		
 		// Create Sentiments
 		result.sentiments = new Sentiment[this.sentiments.length];

@@ -27,11 +27,14 @@
 package sirocco.indexer;
 
 import CS2JNet.System.StringSupport;
+import CS2JNet.System.Collections.LCC.CSList;
 import sirocco.indexer.EnglishIndexerPool;
 import sirocco.indexer.Language;
 import sirocco.indexer.NonEnglishIndexerPool;
 import sirocco.indexer.util.LangUtils;
 import sirocco.model.ContentIndex;
+import sirocco.model.LabelledText;
+import sirocco.model.TextTag;
 
 public class Indexer   
 {
@@ -39,9 +42,24 @@ public class Indexer
     * Generates NLP info
     */
     public static void index(ContentIndex contentindex) throws Exception {
+    	
+    	String validationMessage = contentindex.validateInputFields();
+		if (validationMessage != null) {
+			contentindex.IndexingErrors = validationMessage;
+        	contentindex.IsIndexingSuccessful = false;
+        	return;
+		}
+		
+		if (contentindex.OriginalText == null || contentindex.OriginalText.isEmpty()) {
+			// No need to run through full indexing. In the previous step we validated that other important fields are available
+			contentindex.IsIndexingSuccessful = true;
+			contentindex.populateResultsWithMinValues();
+			return;
+		}
+    	
         // need to split into clean paragraphs before determining language
         String[] paragraphs = StructuredSplitter.splitIntoParagraphs(contentindex.OriginalText,contentindex.ContentType);
-        if (paragraphs.length == 0)
+        if (paragraphs.length == 0) 
             return ;
          
         contentindex.initializeParagraphs(paragraphs);

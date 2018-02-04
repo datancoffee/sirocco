@@ -34,6 +34,7 @@ import sirocco.annotators.BriefLogTextAnnotator;
 import sirocco.annotators.ExtendedLogTextAnnotator;
 import sirocco.indexer.FloatVector;
 import sirocco.indexer.IndexingConsts;
+import sirocco.indexer.Language;
 import sirocco.indexer.util.LangUtils;
 import sirocco.model.summary.ContentIndexSummary;
 
@@ -95,6 +96,8 @@ public class ContentIndex
     
     public Long ParentPubTime;
     
+    public String[] MetaFields;
+    
     /****************/
     /* Intermediate results of indexing */
     public String Language;
@@ -121,14 +124,14 @@ public class ContentIndex
     
     public ContentIndex(String content, IndexingConsts.IndexingType indexingType, 
     		IndexingConsts.ContentType cueType, Long processingTime)  {
-        this(content, indexingType, cueType,processingTime, null,null,null,null, null, null, null, null);
+        this(content, indexingType, cueType,processingTime, null,null,null,null, null, null, null, null, null);
     }
     
     public ContentIndex(String content, IndexingConsts.IndexingType indexingType, 
     		IndexingConsts.ContentType cueType, Long processingTime,
     	    String url, Long publicationTime,  String title, String author, 
     	    String documentCollectionId, String collectionItemId,
-    	    String parentUrl, Long parentPubTime)  {
+    	    String parentUrl, Long parentPubTime, String[] metaFields)  {
         this.OriginalText = content;
         this.IndexingType = indexingType;
         this.ContentType = cueType;
@@ -141,8 +144,30 @@ public class ContentIndex
         this.CollectionItemId = collectionItemId;
         this.ParentUrl = parentUrl;
         this.ParentPubTime = parentPubTime;
+        this.MetaFields = metaFields;
     }
 
+    /**
+     * Will validate the input fields set in the constructors
+     * @return Error message or null String, if no error
+     */
+    public String validateInputFields() {
+    	String result = null;
+    	if (this.OriginalText == null || this.OriginalText.isEmpty()) {
+    		if ((this.DocumentCollectionId == null || this.DocumentCollectionId.isEmpty()) ||
+    		    (this.CollectionItemId == null || this.CollectionItemId.isEmpty()) ) {
+    			result = "Null or Empty text and collection document id";
+    		}
+    	}
+    	return result;
+    }
+    
+    public void populateResultsWithMinValues() {
+    	this.Language = sirocco.indexer.Language.Undetermined;
+    	this.TopTags = new TextTag[0];
+    	this.SelectedSentiments = new CSList<LabelledText>();
+    }
+    
     /**
      * Should be called on the final content index, after the .index operation has been executed.
      * @return The final content index with just the important text stats
@@ -154,7 +179,7 @@ public class ContentIndex
     		this.DocumentCollectionId, this.CollectionItemId,
     		this.Title, this.Author, 
     		this.OriginalText, this.ContentType, this.ContentParseDepth, this.Language, this.TopTags, 
-    		this.SelectedSentiments, this.ParentUrl, this.ParentPubTime);
+    		this.SelectedSentiments, this.ParentUrl, this.ParentPubTime, this.MetaFields);
 
     	return summary;
     }

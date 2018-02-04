@@ -111,7 +111,7 @@ public class Document
 		Integer processingDateId = IdConverterUtils.getDateIdFromTimestamp(processingTime);
 
 		// Determine the ID of Document
-		String documentHash = calculateDocumentHash(text);
+		String documentHash = calculateDocumentHash(text, documentCollectionId, collectionItemId);
 
 		this.initialize(documentHash, publicationTime, publicationDateId, processingTime, processingDateId,
 				documentCollectionId, collectionItemId,
@@ -119,10 +119,16 @@ public class Document
 
 	}    
 	
-	public static String calculateDocumentHash(String text) {
+	public static String calculateDocumentHash(String text, String documentCollectionId, String collectionItemId) {
 		// TODO: implement a more sophisticated fingerprinting algorithm
 		// that strips the text of leading and trailing copyright and location 
-		return HashUtils.getSHA1HashBase64(text);
+		
+		String result = ((text !=null)) ? 
+			HashUtils.getSHA1HashBase64(text) : 
+			((documentCollectionId != null) && (collectionItemId !=null)) ? 
+				HashUtils.getSHA1HashBase64(documentCollectionId + collectionItemId) : 
+				null;
+		return result;
 	} 
 	
     
