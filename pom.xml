@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>sirocco.sirocco-sa</groupId>
   <artifactId>sirocco-sa</artifactId>
-  <version>1.0.7</version>
+  <version>1.0.8</version>
   <packaging>jar</packaging>
   <name>Sirocco Sentiment Analysis</name>
   <description>The sentiment analysis SDK</description>
@@ -120,6 +120,11 @@
 		<groupId>org.apache.avro</groupId>
 		<artifactId>avro</artifactId>
 		<version>1.8.1</version>
-	</dependency>	
+	</dependency>
+	<dependency>
+	    <groupId>org.apache.commons</groupId>
+	    <artifactId>commons-csv</artifactId>
+	    <version>1.5</version>
+	</dependency>		
   </dependencies>
 </project>

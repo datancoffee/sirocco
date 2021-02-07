@@ -28,6 +28,7 @@ package sirocco.model;
 
 import CS2JNet.System.Collections.LCC.CSList;
 import sirocco.indexer.FloatVector;
+import sirocco.model.SentimentReference;
 
 public class EntityStats   
 {
@@ -36,13 +37,25 @@ public class EntityStats
     public Boolean GoodAsTopic;
     public Boolean GoodAsTag;
     public CSList<TextReference> References;
-    public FloatVector AggregateSentiment;
+    public CSList<SentimentReference> RelatedSentiments;
+
     public EntityStats(String entity) {
         this.Entity = entity;
         References = new CSList<TextReference>();
-        AggregateSentiment = new FloatVector();
+        RelatedSentiments = new CSList<SentimentReference>();
     }
 
+    public FloatVector getAggregateSentiment() {
+    	FloatVector result = new FloatVector();
+    	for (SentimentReference ref: RelatedSentiments)
+    		result.accumulate(ref.Sentiment, false);
+    	return result;
+    };
+    
+    public void addRelatedSentiment(int paragraphNum, int sentenceNum, FloatVector sentiment){
+    	RelatedSentiments.add(new SentimentReference(paragraphNum, sentenceNum, sentiment));
+    }
+    
 }
 
 

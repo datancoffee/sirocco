@@ -39,7 +39,6 @@ import sirocco.indexer.util.LangUtils;
 import sirocco.model.LabelledSpan;
 import sirocco.util.HashUtils;
 
-import java.util.Arrays;
 import java.util.HashMap;
 
 
@@ -198,9 +197,88 @@ public class FloatVector extends HashMap<String,Float> implements IGenericVector
             spans.add(span);
         }
          
-        accumulate(othervector,spans,addDerivationSteps);
+        accumulate(othervector,spans,addDerivationSteps, null);
     }
 
+    
+    public void accumulate(FloatVector othervector, CSList<Span> spans, boolean addDerivationSteps, Span scopeSpan)  {
+        if (othervector == null)
+            return ;
+         
+        for (Entry<String,Float> otherkvp : othervector.entrySet())
+        {
+            if (otherkvp.getValue() == DefaultValue)
+                continue;
+             
+            Float value = this.get(otherkvp.getKey());
+            if (value == null || value == DefaultValue)
+                this.put(otherkvp.getKey(), otherkvp.getValue());
+            else
+            {
+                if (MultiplicativeDimensions.contains(otherkvp.getKey()))
+                    this.put(otherkvp.getKey(), value * otherkvp.getValue());
+                else
+                    this.put(otherkvp.getKey(), value + otherkvp.getValue()); 
+            } 
+            if (addDerivationSteps)
+            {
+            	CSList<DerivationStep> stepsToAdd = null;
+            	if (scopeSpan == null)
+            		stepsToAdd = othervector.dimDerivationSteps(otherkvp.getKey());
+            	else {
+            		stepsToAdd = new CSList<DerivationStep>();
+            		for (DerivationStep step: othervector.dimDerivationSteps(otherkvp.getKey())) 
+            			if (scopeSpan.contains(step.DerivationSpan))
+            				stepsToAdd.add(step);
+             	}
+            		
+                this.dimDerivationSteps(otherkvp.getKey()).addAll(stepsToAdd);
+                
+                if (spans != null)
+                {
+                	// TODO: This is where I need to add the Shortkeys! With Spans, so that I can filter
+                    CSList<DerivationStep> steps = DerivationStep.createList(DerivationStep.AccumulateAction,spans);
+                    this.dimDerivationSteps(otherkvp.getKey()).addAll(steps);
+                }
+                 
+            }
+             
+            CSList<String> combinationDimensions = SentimentDimension.DimensionsRequiringCombinations.get(otherkvp.getKey());
+
+            if (combinationDimensions != null)
+            {
+                if (this.sumOfIntensities(combinationDimensions) >= SentimentDimension.CombinationThreshold)
+                {
+                    String aggregatingDimension = SentimentDimension.sentimentOfCombined(otherkvp.getKey());
+                    for (String dimension : combinationDimensions)
+                    {
+                        this.moveDimensionValues(dimension,aggregatingDimension);
+                    }
+                }
+                 
+            }
+             
+        }
+        
+        // Go through dimensions and reset the ones that were left without derivationSteps after filtering by scopeSpan
+        if (addDerivationSteps && scopeSpan != null)
+        {
+        	 for (Entry<String,Float> kvp : this.entrySet())
+             {
+                 String dimension = kvp.getKey();
+                 if (this.dimDerivationSteps(dimension).size() == 0)
+                	 this.put(dimension, DefaultValue);
+             }
+        }
+        
+        // Merge shortkeys
+        // TODO: see above for where to add 
+        this.getShortkeys().addAll(othervector.getShortkeys());
+        
+    }
+    
+    /*
+     * sso 7/7/18: Before adding the scopeSpan filter
     public void accumulate(FloatVector othervector, CSList<Span> spans, boolean addDerivationSteps)  {
         if (othervector == null)
             return ;
@@ -247,11 +325,12 @@ public class FloatVector extends HashMap<String,Float> implements IGenericVector
             }
              
         }
-        
+    
         // Merge shortkeys
         this.getShortkeys().addAll(othervector.getShortkeys());
         
     }
+    */
 
     public void removeUnusedCombinationParts()  {
         for (String dimension : SentimentDimension.DimensionsRequiringCombinations.keySet())
@@ -314,7 +393,71 @@ public class FloatVector extends HashMap<String,Float> implements IGenericVector
         }
     }
 
+    private void resetMappingState(){
+    	// Prepare for the remapping operation
+    	// Because derivations step objects can be contained in derivation lists of multiple dimensions
+    	// set the IsRemapped to false
+        for (Entry<String,CSList<DerivationStep>> dimderivsteps : derivationSteps.entrySet())
+            for (DerivationStep derivstep : dimderivsteps.getValue())
+            	derivstep.IsRemapped = false;
+    }
+    
     public void remapSpans(HashMap<String,Span> spanmap)  {
+    	
+    	/*
+    	 * sso 7/6/2018: Deep Parsing requires handling cases when Sentiment Spans can be trees of other things but tokens
+    	 */
+    	HashMap<Integer,Integer> spanStarts = new HashMap<Integer,Integer>();
+    	HashMap<Integer,Integer> spanEnds = new HashMap<Integer,Integer>();
+    	
+        for (Entry<String,Span> mapping : spanmap.entrySet())
+        {
+        	String key = mapping.getKey();
+        	int oldStart = LangUtils.spanStartFromKey(key);
+        	int oldEnd = LangUtils.spanEndFromKey(key);
+        	
+        	int newStart = mapping.getValue().getStart();
+        	int newEnd = mapping.getValue().getEnd();
+        	
+        	spanStarts.put(new Integer(oldStart), new Integer(newStart));
+        	spanEnds.put(new Integer(oldEnd), new Integer(newEnd));
+        	
+        }
+
+        resetMappingState();
+        
+        for (Entry<String,CSList<DerivationStep>> dimderivsteps : derivationSteps.entrySet())
+        {
+            for (DerivationStep derivstep : dimderivsteps.getValue())
+            {
+            	if (!derivstep.IsRemapped) {
+	            	Integer oldStart = derivstep.DerivationSpan.getStart();
+	            	Integer newStart = spanStarts.get(oldStart);
+	
+	            	Integer oldEnd = derivstep.DerivationSpan.getEnd();
+	            	Integer newEnd = spanEnds.get(oldEnd);
+	            	
+	            	Span newSpan = null;
+	            	
+	            	if (newStart != null && newEnd == null)
+	            		newSpan = new Span(newStart,oldEnd);
+	            	else if (newStart == null && newEnd != null)
+	            		newSpan = new Span(oldStart,newEnd);
+	            	else if (newStart != null && newEnd != null)
+	            		newSpan = new Span(newStart,newEnd);
+	            	
+	                if (newSpan != null) {
+	                    derivstep.DerivationSpan = newSpan;
+	                    derivstep.IsRemapped = true;
+	                }
+            	}
+            }
+        }
+        
+    	
+        /* 
+         * sso 7/6/2018
+         * 
         for (Entry<String,CSList<DerivationStep>> dimderivsteps : derivationSteps.entrySet())
         {
             for (DerivationStep derivstep : dimderivsteps.getValue())
@@ -325,8 +468,10 @@ public class FloatVector extends HashMap<String,Float> implements IGenericVector
                  
             }
         }
+        */
     }
 
+    
     public CSList<LabelledSpan> getDerivationSpans()  {
         CSList<LabelledSpan> lspans = new CSList<LabelledSpan>();
         HashMap<String,CSList<Character>> allSpanLabels = new HashMap<String,CSList<Character>>();

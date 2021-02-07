@@ -29,6 +29,7 @@ package sirocco.cmdline.indexer;
 import java.io.File;
 
 import opennlp.tools.cmdline.ArgumentParser.ParameterDescription;
+import opennlp.tools.cmdline.ArgumentParser.OptionalParameter;
 import opennlp.tools.cmdline.params.EncodingParameter;
 import sirocco.indexer.IndexingConsts;
 
@@ -45,8 +46,27 @@ interface IndexerParams extends EncodingParameter {
   @ParameterDescription(valueName = "outputFile", description = "Name of file with the output sentiment index.")
   File getOutputFile();
   
-  @ParameterDescription(valueName = "indexingType", description = "Indexing type: TOPSENTIMENTS, FULLINDEX.")
+  @ParameterDescription(valueName = "indexingType", description = "Indexing type: TOPSENTIMENTS, FULLINDEX, TEXTENCODING.")
   String getIndexingType();
+
+  @ParameterDescription(valueName = "parsingType", description = "Parsing type: DEEP, SHALLOW, DEPENDENCY.")
+  @OptionalParameter (defaultValue = "SHALLOW")
+  String getParsingType();
+  
+  @ParameterDescription(valueName = "recordDelimiters", description = "(Optional, Default=30) Record delimiter characters dividing records in the file. If multiple characters are used, separate them by a comma, e.g. 13,10 stands for <CR><LF>. Use delimiter 30 (=<RS>) to prevent regular new line delimiters splitting text files.")
+  @OptionalParameter (defaultValue = "30")
+  String getRecordDelimiters();
+
+  @ParameterDescription(valueName = "readAsCSV", description ="(Optional, Default=false) Should records be processed as CSV")
+  @OptionalParameter (defaultValue = "false")
+  Boolean getReadAsCSV();
+
+  @ParameterDescription(valueName = "textColumnIdx", description ="(Optional) CSV inputs: Zero-based index of the Text column in input file")
+  @OptionalParameter (defaultValue = "")
+  String getTextColumnIdx();
+	
+  @ParameterDescription(valueName = "collectionItemIdIdx", description ="(Optional) CSV inputs: Zero-based index of the Collection Item ID column - unique identifier - in input file")
+  String getCollectionItemIdIdx();
   
 
 }

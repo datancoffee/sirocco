@@ -26,6 +26,7 @@
 
 package sirocco.model;
 
+import opennlp.tools.parser.Parse;
 import opennlp.tools.util.Span;
 
 public class TextReference   
@@ -33,10 +34,13 @@ public class TextReference
     public int ParagraphNum;
     public int SentenceNum;
     public Span Span;
-    public TextReference(int paragraphNum, int sentenceNum, Span span) throws Exception {
+    public Parse Parent;
+    
+    public TextReference(int paragraphNum, int sentenceNum, Span span, Parse parent) throws Exception {
         ParagraphNum = paragraphNum;
         SentenceNum = sentenceNum;
         Span = span;
+        Parent = parent;
     }
 
 }

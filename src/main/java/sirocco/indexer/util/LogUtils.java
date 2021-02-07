@@ -29,17 +29,25 @@ package sirocco.indexer.util;
 import CS2JNet.System.Collections.LCC.CSList;
 import CS2JNet.System.StringSupport;
 import sirocco.annotators.BriefLogTextAnnotator;
+import sirocco.annotators.ExtendedLogTextAnnotator;
+import sirocco.indexer.IndexingConsts;
 import sirocco.indexer.Language;
 import sirocco.indexer.SentimentDimension;
 import sirocco.indexer.SentimentValenceHelper;
+import sirocco.indexer.IndexingConsts.IndexingType;
 import sirocco.indexer.IndexingConsts.SentimentValence;
 import sirocco.model.ContentIndex;
+import sirocco.model.EntityStats;
+import sirocco.model.LabelledPositionsV2;
+import sirocco.model.LabelledSentence;
 import sirocco.model.LabelledText;
+import sirocco.model.SentimentReference;
 import sirocco.model.TextTag;
 
 import java.io.PrintWriter;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Map.Entry;
 
 public class LogUtils   
 {
@@ -63,14 +71,30 @@ public class LogUtils
             sb.append(System.lineSeparator());
             printAttributes(taskID,contentindex,sb);
             sb.append(System.lineSeparator());
-            printTags(taskID,contentindex.TopTags,sb);
-            sb.append(System.lineSeparator());
-            printTopSentiments(taskID,contentindex,sb);
-            sb.append(System.lineSeparator());
-            printLinks(taskID,contentindex.getLinks(),sb);
-            sb.append(System.lineSeparator());
-            printString(taskID,contentindex.getFullAnnotatedText(true),"FULL ANNOTATED TEXT",sb);
-            sb.append(System.lineSeparator());
+            
+            if (contentindex.IndexingType == IndexingType.NGRAMSTATS ) {
+            	
+            	printNgramStats(taskID,contentindex,sb);
+                sb.append(System.lineSeparator());
+            	
+            } else {
+            
+	            if (contentindex.ContentParseDepth == IndexingConsts.ParseDepth.DEEP) {
+	            	printEntitySentiments(taskID,contentindex,sb);
+	            	sb.append(System.lineSeparator());
+	            } else {
+	            	printTags(taskID,contentindex.TopTags,sb);
+		            sb.append(System.lineSeparator());
+		            printTopSentiments(taskID,contentindex,sb);
+		            sb.append(System.lineSeparator());
+	            }
+	            printLinks(taskID,contentindex.getLinks(),sb);
+	            sb.append(System.lineSeparator());
+	            printString(taskID,contentindex.getFullAnnotatedText(true),"FULL ANNOTATED TEXT",sb);
+	            sb.append(System.lineSeparator());
+            }
+            
+            
             printString(taskID,contentindex.OriginalText,"FULL ORIGINAL TEXT",sb);
         }
         else
@@ -87,6 +111,49 @@ public class LogUtils
         } 
     }
 
+    public static void printNgramStats(long taskID, ContentIndex contentindex, StringBuilder sb) throws Exception {
+        sb.append(("N-gram Stats Begin:") + System.getProperty("line.separator"));
+        if (contentindex.NgramStats == null)
+            return ;
+        
+        for (Entry<String,Integer> kvp : contentindex.NgramStats.entrySet())
+        {
+        	sb.append(kvp.getKey() + " : " + kvp.getValue());
+            sb.append(System.lineSeparator());
+        }
+    } 
+    
+    public static void printEntitySentiments(long taskID, ContentIndex contentindex, StringBuilder sb) throws Exception {
+        sb.append(("ENTITY SENTIMENTS Begin:") + System.getProperty("line.separator"));
+        if (contentindex.SortedEntityStats == null)
+            return ;
+         
+        ExtendedLogTextAnnotator annotator = new ExtendedLogTextAnnotator();
+        for (EntityStats entityStats: contentindex.SortedEntityStats)
+        {
+        	
+        	sb.append(entityStats.Entity + " :");
+            sb.append(System.lineSeparator());
+        	
+            for (SentimentReference ref: entityStats.RelatedSentiments)
+            {
+            	String parsenkey = ContentIndex.parSenKey(ref.ParagraphNum,ref.SentenceNum);
+                LabelledSentence lsentence = new LabelledSentence();
+                 
+                lsentence.ParSenKey = parsenkey;
+                lsentence.LabelledPositions.addLabelledSpans(ref.Sentiment.getDerivationSpans());
+                lsentence.TotalSentimentScore = ref.Sentiment.sumAllIntensities();
+                
+                String sentence = contentindex.indexedSentenceByParSenKey(parsenkey);
+               
+                String extract = annotator.annotate(lsentence.LabelledPositions,sentence,/*dropBeforeAfter*/true);
+                sb.append(extract);
+                sb.append(System.lineSeparator());
+             }
+            
+        }
+    }   
+    
     public static void printTopSentiments(long taskID, ContentIndex contentindex, StringBuilder sb) throws Exception {
         sb.append(("TOP SENTIMENTS Begin:") + System.getProperty("line.separator"));
         if (contentindex.SelectedSentiments == null)
@@ -114,6 +181,36 @@ public class LogUtils
             sb.append(System.lineSeparator());
         }
     }
+    
+    public static void printTextEncoding(long taskID, ContentIndex contentindex, StringBuilder sb) throws Exception {
+        
+        if (contentindex.SelectedSentiments == null)
+            return ;
+         
+        BriefLogTextAnnotator annotator = new BriefLogTextAnnotator();
+        for (int i = 0;i < contentindex.SelectedSentiments.size();i++)
+        {
+            LabelledText ltext = contentindex.SelectedSentiments.get(i);
+            sb.append("Sentiment {" + i + "} Tags: ");
+            sb.append(LangUtils.printStringList(ltext.ContainedEntities,", "));
+            sb.append(System.lineSeparator());
+            sb.append(("Sentiment {" + i + "} Dominant Valence: " + SentimentValenceHelper.valenceLabel(ltext.AggregateSentiment.dominantValence())) + System.getProperty("line.separator"));
+            sb.append(("Sentiment {" + i + "} Total Sentiment Score: " + ltext.AggregateSentimentScore) + System.getProperty("line.separator"));
+            sb.append("Sentiment {" + i + "} Annotated Text: ");
+            String woLabels = annotator.annotate(ltext.LabelledPositions,ltext.Text);
+            sb.append(woLabels);
+            sb.append(System.lineSeparator());
+            sb.append("Sentiment {" + i + "} Serialized Representation: ");
+            String data = ltext.LabelledPositions.stringSerialize();
+            sb.append(data);
+            sb.append(System.lineSeparator());
+            sb.append("Sentiment {" + i + "} Signals: ");
+            sb.append(LangUtils.printStringList(ltext.getContainedSignalShortkeys(),", "));
+            sb.append(System.lineSeparator());
+        }
+    }    
+    
+    
 
     public static void printStats(long taskID, ContentIndex contentindex, StringBuilder sb) throws Exception {
         sb.append(String.format(StringSupport.CSFmtStrToJFmtStr("TEXT STATS Length [{0}] "),contentindex.OriginalText.length()));

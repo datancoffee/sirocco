@@ -52,7 +52,9 @@ public class IndexingConsts
 	public enum IndexingType
 	{
 	    TOPSENTIMENTS (0),
-	    FULLINDEX (1);
+	    FULLINDEX (1),
+	    TEXTENCODING(2),
+	    NGRAMSTATS(3);
 	
 	    private final int val;
 	

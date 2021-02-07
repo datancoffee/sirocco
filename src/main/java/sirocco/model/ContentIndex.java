@@ -50,6 +50,7 @@ public class ContentIndex
     public final static int MaxTopSentiments = 4;
     
     public final static int MaxTopTags = 7;
+    
     /**
      * Measured in characters
      */
@@ -76,6 +77,10 @@ public class ContentIndex
      */    
     public IndexingConsts.ContentType ContentType;
     /**
+     * ContentParseDepth (optional): ParseDepth influences the speed of parsing of constituency trees. Shallow Parsing is 15x faster, but is worse in quality
+     */    
+    public IndexingConsts.ParseDepth ContentParseDepth = IndexingConsts.ParseDepth.SHALLOW;
+    /**
      * ProcessingTime (required)
      */    
     public Long ProcessingTime; 
@@ -99,9 +104,13 @@ public class ContentIndex
     public String[] MetaFields;
     
     /****************/
+    /* Inputs into indexing with Ngram Stats outputs */
+    public Integer NgramMaxN = 4;
+    public Boolean NgramBreakAtPunctuation = true;
+    
+    /****************/
     /* Intermediate results of indexing */
     public String Language;
-    public IndexingConsts.ParseDepth ContentParseDepth = IndexingConsts.ParseDepth.SHALLOW;
     public ParagraphIndex[] ParagraphIndexes;
     public HashMap<String,EntityStats> ContentEntityStats = new HashMap<String,EntityStats>();
     public CSList<EntityStats> SortedEntityStats;
@@ -114,6 +123,7 @@ public class ContentIndex
     public CSList<LabelledText> SelectedSentiments;
     public Boolean IsIndexingSuccessful = false;
     public String IndexingErrors;
+    public HashMap<String,Integer> NgramStats;
     
     /**
      * Temporary performance stats.
@@ -166,6 +176,7 @@ public class ContentIndex
     	this.Language = sirocco.indexer.Language.Undetermined;
     	this.TopTags = new TextTag[0];
     	this.SelectedSentiments = new CSList<LabelledText>();
+    	this.NgramStats = new HashMap<String,Integer>();
     }
     
     /**
@@ -203,6 +214,20 @@ public class ContentIndex
         ContentEntityStats.get(entity).GoodAsTag = goodAsTag;
     }
 
+    public void addNgramMentions(CSList<String> mentions){
+    	if (this.NgramStats == null)
+    		this.NgramStats = new HashMap<String,Integer>();
+    	
+    	for (String ngram: mentions) {
+    		Integer currentCount = this.NgramStats.get(ngram);
+    		if (currentCount == null)
+    			this.NgramStats.put(ngram, 1);
+    		else 
+    			this.NgramStats.put(ngram, currentCount + 1);
+    	}
+    }
+   
+    
     public static void splitParSenKey(String key, RefSupport<Integer> parnum, RefSupport<Integer> sennum) {
         String[] parts = StringSupport.Split(key, '/');
         
@@ -316,6 +341,7 @@ public class ContentIndex
         }
         return links;
     }
+    
 
 }
 

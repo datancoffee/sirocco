@@ -35,6 +35,7 @@ public class DerivationStep
 {
     public String Action;
     public Span DerivationSpan;
+    public Boolean IsRemapped = false; // temporary state during remapSteps() operation
     public static final String AccumulateAction = "accumulate";
     //public static string MultiplyAction = "multiply";
     public static final String NegateAndMultiplyAction = "negate-multiply";

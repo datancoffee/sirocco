@@ -32,15 +32,22 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.IOUtils;
 
 import opennlp.tools.cmdline.BasicCmdLineTool;
 import opennlp.tools.cmdline.CmdLineUtil;
 import opennlp.tools.cmdline.TerminateToolException;
+import opennlp.tools.cmdline.ArgumentParser.OptionalParameter;
+import opennlp.tools.cmdline.ArgumentParser.ParameterDescription;
 import opennlp.tools.dictionary.Dictionary;
 import sirocco.indexer.Indexer;
 import sirocco.indexer.IndexingConsts;
+import sirocco.indexer.IndexingConsts.ParseDepth;
 import sirocco.indexer.util.LogUtils;
 import sirocco.model.ContentIndex;
 import sirocco.model.serialization.AvroSerializer;
@@ -48,6 +55,8 @@ import sirocco.model.summary.ContentIndexSummary;
 
 public class IndexerTool extends BasicCmdLineTool {
 
+  public static final String DOC_COL_ID_CSV_FILE = "04";
+  
   interface Params extends IndexerParams {
   }
 
@@ -66,7 +75,14 @@ public class IndexerTool extends BasicCmdLineTool {
     File dictOutFile = params.getOutputFile();
     Charset encoding = params.getEncoding();
     IndexingConsts.IndexingType indexingType =  IndexingConsts.IndexingType.valueOf(params.getIndexingType());
+    IndexingConsts.ParseDepth parsingType =  IndexingConsts.ParseDepth.valueOf(params.getParsingType());
+    
+    String recordDelimiters = params.getRecordDelimiters();
+    Boolean readAsCSV = params.getReadAsCSV();
 
+    Integer textColumnIdx = (params.getTextColumnIdx()!="") ? Integer.valueOf(params.getTextColumnIdx()) : null;
+	Integer collectionItemIdIdx = (params.getCollectionItemIdIdx()!="") ? Integer.valueOf(params.getCollectionItemIdIdx()) : null;
+    
     CmdLineUtil.checkInputFile("input file of the document to be indexed", dictInFile);
     CmdLineUtil.checkOutputFile("output file with sentiment index", dictOutFile);
 
@@ -79,22 +95,60 @@ public class IndexerTool extends BasicCmdLineTool {
       out = new FileOutputStream(dictOutFile);
       outAvro = new FileOutputStream(dictOutFile+".avro");
       
-      String inputFileContents = IOUtils.toString(in);
-      long now = System.currentTimeMillis();
-      ContentIndex contentindex = new ContentIndex(inputFileContents,
-    		  indexingType,
-              IndexingConsts.ContentType.ARTICLE,
-              now);
+      ArrayList<ContentIndex> docList = new ArrayList<ContentIndex>();
       
-      Indexer.index(contentindex);
+      if (readAsCSV == false) {
           
-      StringBuilder sb = new StringBuilder();
-      LogUtils.printIndex(1, contentindex, sb);
-      String docIndex = sb.toString();
+    	  String inputFileContents = IOUtils.toString(in);
+    	  long now = System.currentTimeMillis();
+
+          ContentIndex contentindex = new ContentIndex(inputFileContents,
+        		  indexingType,
+                  IndexingConsts.ContentType.ARTICLE,
+                  now);
+          contentindex.ContentParseDepth = parsingType; //TODO: Move to constructor
+          docList.add(contentindex);
+
+      } else {
+		
+		Iterable<CSVRecord> records = CSVFormat.DEFAULT
+			.withFirstRecordAsHeader()
+			.parse(in);
+		
+		for (CSVRecord record : records) {
+			
+			long now = System.currentTimeMillis();
+			
+			String text = record.get(textColumnIdx);
+			String documentCollectionId = DOC_COL_ID_CSV_FILE;
+			String collectionItemId = (collectionItemIdIdx!=null)? record.get(collectionItemIdIdx): null;
+			
+			ContentIndex contentindex = new ContentIndex(/*content*/ text, /*indexingType*/ indexingType, 
+		    		/*cueType*/ IndexingConsts.ContentType.ARTICLE, /*processingTime*/ now,
+		    	    /*url*/ null, /*publicationTime*/ null,  /*title*/ null, /*author*/ null, 
+		    	    /*documentCollectionId*/ documentCollectionId, /*collectionItemId*/ collectionItemId,
+		    	    /*parentUrl*/ null, /*parentPubTime*/ null, /*metaFields*/ null);
+			contentindex.ContentParseDepth = parsingType; //TODO: Move to constructor
+			docList.add(contentindex);
+	          
+		}
+      } 
+	  
+      // iterate through all collected docs
+      for (ContentIndex ci : docList) {
+
+          Indexer.index(ci);
+          
+          StringBuilder sb = new StringBuilder();
+          LogUtils.printIndex(1, ci, sb);
+          String docIndex = sb.toString();
+          
+          IOUtils.write(docIndex,out,Charset.forName("utf-8"));
+          ContentIndexSummary summary = ci.getContentIndexSummary();
+          AvroSerializer.writeContentIndexSummary(summary, outAvro);
+
+	  }
       
-      IOUtils.write(docIndex,out,Charset.forName("utf-8"));
-      ContentIndexSummary summary = contentindex.getContentIndexSummary();
-      AvroSerializer.writeContentIndexSummary(summary, outAvro);
 
     } catch (IOException e) {
     	throw new TerminateToolException(-1, "IO error while reading documents or writing sentiment index: " + e.getMessage(), e);

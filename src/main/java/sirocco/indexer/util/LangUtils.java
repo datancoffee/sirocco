@@ -46,6 +46,8 @@ public class LangUtils
         int latinCount = 0;
         int foreignCount = 0;
         int neutralCount = 0;
+        int spaceCount = 0;
+
         for (int i = 0;i < paragraphs.length;i++)
         {
             String data = paragraphs[i];
@@ -68,8 +70,10 @@ public class LangUtils
                 // quick and dirty implementation of language identification
                 // algorithm. When we support more languages in the Parser,
                 // implement N-gram language identification (TextCat)
-                if (c <= 32)
+                if (c < 32)
                     neutralCount++;
+                else if (c == 32)
+                    spaceCount++;
                 else if ((c >= 33) && (c <= 64))
                     neutralCount++;
                 else if ((c >= 65) && (c <= 90))
@@ -151,6 +155,31 @@ public class LangUtils
         return output;
     }
 
+    /*
+    public static String printParsePennbankTree(Parse parse) throws Exception {
+		StringBuffer buff = new StringBuffer();
+		buff.append("(");
+		try{
+			parse.show();
+			buff.append(parse.getNodeType());
+		}catch(Exception e){
+			System.err.println("Caught NPE");
+		}
+		if(pathTree.getLeaf()){ //pathTree.getChildren().size() == 1 && pathTree.getChildren(0).getLeaf()){
+			buff.append(" ");
+			buff.append(pathTree.getNodeValue());
+//			buff.append(")");
+		}else{
+			for(int i = 0; i < pathTree.getChildren().size(); i++){
+				buff.append(" ");
+				buff.append(tree2str(pathTree.getChildren(i)));
+			}
+		}
+		buff.append(")");
+		return buff.toString();
+    }
+    */
+    
     public static String printPOSTags(CSList<Parse> list, String separator) throws Exception {
         String output = "";
         for (Parse item : list)

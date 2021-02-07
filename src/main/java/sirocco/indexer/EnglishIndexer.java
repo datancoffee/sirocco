@@ -34,6 +34,8 @@ import CS2JNet.System.StringSupport;
 import net.sf.extjwnl.dictionary.morph.Util;
 
 import java.io.InputStream;
+import java.lang.reflect.Array;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
@@ -46,6 +48,7 @@ import sirocco.indexer.FloatVector;
 import sirocco.indexer.IndexerLabel;
 import sirocco.indexer.LanguageSpecificIndexer;
 import sirocco.indexer.NounChunkType;
+import sirocco.indexer.IndexingConsts.IndexingType;
 import sirocco.indexer.IndexingConsts.ParseDepth;
 import sirocco.indexer.dictionaries.GenericDictionary;
 import sirocco.indexer.dictionaries.en.EnglishDictionaries;
@@ -81,8 +84,7 @@ import opennlp.tools.postag.TagDictionary;
 import opennlp.tools.sentdetect.SentenceDetectorME;
 import opennlp.tools.sentdetect.SentenceModel;
 import opennlp.tools.tokenize.Tokenizer;
-import opennlp.tools.tokenize.TokenizerME;
-import opennlp.tools.tokenize.TokenizerModel;
+
 
 public class EnglishIndexer  extends LanguageSpecificIndexer 
 {
@@ -139,6 +141,7 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
     private static CSList<String> tlADJPParentTypes = new CSList<String>(new String[]{ "NP", "S", "SBAR", "TOP" });
     private static CSList<String> tlEmotionVerbsParentTypes = new CSList<String>(new String[]{ "VP", "S", "SBAR", "TOP" });
     private static CSList<String> tlGoodObjectTypesWithNP = new CSList<String>(new String[]{ "NP", "NN", "NNS", "NNP", "NNPS", "JJ", "JJR", "JJS", "CD" });
+    private static CSList<String> tlParentsOfGoodObjects = new CSList<String>(new String[]{ "NP" });
     private static CSList<String> tlGoodObjectTypes = new CSList<String>(new String[]{ "NN", "NNS", "NNP", "NNPS", "JJ", "JJR", "JJS", "CD" });
     private static CSList<String> tlNotAGoodSoleObject = new CSList<String>(new String[]{ "CD" });
     private static CSList<String> tlPhraseBreakerTypes = new CSList<String>(new String[]{ "DT", "WDT", "CC", ",", ":" });
@@ -166,7 +169,8 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
     private static CSList<String> tlQuestionSentenceTop = new CSList<String>(new String[]{ "SQ", "SBARQ" });
     private static CSList<String> tlSentenceTop = new CSList<String>(new String[]{ "S", "SBAR", "SINV" });
     private static CSList<String> tlOrdinalSuffixes = new CSList<String>(new String[]{ "ST", "ND", "RD", "TH" });
-
+    private static CSList<String> tlNgramBreakerTypes = new CSList<String>(new String[]{ ".", ",", ":" }); 
+    		
     // Chunker chunk tag prefixes (B- and I-) are different from Parser chunk tag prefixes (S- and C-)
     private static String CHUNKER_CHUNK_START = "B-";
     private static String CHUNKER_CHUNK_CONT = "I-";
@@ -179,16 +183,21 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
     public void index(ContentIndex contentindex) throws Exception {
         contentindex.ActionTimestamps.put("Index:start", Calendar.getInstance().getTime());
         split(contentindex);
-        chunk(contentindex);
-        findIdioms(contentindex);
-        getSentiment(contentindex);
-        findGoodEntities(contentindex);
-        buildEntitySentimentContext(contentindex);
-        calculateEntityScore(contentindex);
-        selectTopTags(contentindex);
-        buildLabelledSentences(contentindex);
-        chunkLabelledSentences(contentindex);
-        selectSentiments(contentindex);
+        chunk_or_parse(contentindex);
+        if (contentindex.IndexingType == IndexingType.NGRAMSTATS) {
+        	contentindex.TopTags = new TextTag[0];
+        	contentindex.SelectedSentiments = new CSList<LabelledText>();
+        } else {	
+	        findIdioms(contentindex);
+	        getSentiment(contentindex);
+	        findGoodEntities(contentindex);
+	        buildEntitySentimentContext(contentindex);
+	        calculateEntityScore(contentindex);
+	        selectTopTags(contentindex);
+	        buildLabelledSentences(contentindex);
+	        chunkLabelledSentences(contentindex);
+	        selectSentiments(contentindex);
+        }
         contentindex.IsIndexingSuccessful = true;
         contentindex.ActionTimestamps.put("Index:stop", Calendar.getInstance().getTime());
     }
@@ -220,9 +229,11 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
         }
     }
 
+    /*
+     * sso 7/5/2018: old version, before Deep Parsing introduction
     public void chunk(ContentIndex contentindex) throws Exception {
         contentindex.ActionTimestamps.put("Chunk:start", Calendar.getInstance().getTime());
-        contentindex.ContentParseDepth = IndexingConsts.ParseDepth.SHALLOW;;
+        contentindex.ContentParseDepth = IndexingConsts.ParseDepth.SHALLOW; 
         for (int i = 0;i < contentindex.ParagraphIndexes.length;i++)
         {
             ParagraphIndex pindex = contentindex.ParagraphIndexes[i];
@@ -262,23 +273,90 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
         }
         contentindex.ActionTimestamps.put("Chunk:stop", Calendar.getInstance().getTime());
     }
-
+	*/
     
     /**
-     * Method for Deep Parsing
-     * Not currently used because Shallow Parsing (the chunk method) has a much better performance with 
-     * acceptable quality loss
+     * Methods for Deep Parsing or Shallow Parsing (Chunking)
+     * Be aware that Shallow Parsing (the chunk method) has a much better performance with acceptable quality loss when used against Social Media.
+     * For good English, Deep Parsing has much better quality
      * 
      * @param contentindex
      * @throws Exception
      */
+
+    public void chunk_or_parse(ContentIndex contentindex) throws Exception {
+        contentindex.ActionTimestamps.put("Chunk/Parse:start", Calendar.getInstance().getTime());
+        
+        for (int i = 0;i < contentindex.ParagraphIndexes.length;i++)
+        {
+            ParagraphIndex pindex = contentindex.ParagraphIndexes[i];
+            pindex.SentenceParses = new Parse[pindex.SentenceCount];
+            pindex.SentenceFlags = new SentenceFlags[pindex.SentenceCount];
+            pindex.ParagraphStats = new TextStats();
+            for (int j = 0;j < pindex.SentenceCount;j++)
+            {
+                pindex.SentenceFlags[j] = new SentenceFlags();
+                //replace chars that NLP can;t understand
+                String normalizedSentence = normalizeSentence(pindex.OriginalSentences[j]);
+                String[] tokens = tokenizeSentence(normalizedSentence);
+                // calculate caps and number of entities stats
+                pindex.SentenceFlags[j].SentenceStats.calculateSentenceStats(tokens);
+                pindex.ParagraphStats.addStats(pindex.SentenceFlags[j].SentenceStats);
+                pindex.SentenceFlags[j].ParagraphStats = pindex.ParagraphStats;
+                
+                // lower case some tokens to make them work with NLP
+                RefSupport<Span[]> outSpans = new RefSupport<Span[]>();
+                RefSupport<String[]> outFixedtokens = new RefSupport<String[]>();
+                RefSupport<String> outSentence = new RefSupport<String>();
+                fixTokens(tokens,pindex.SentenceFlags[j],outSpans,outFixedtokens,outSentence);
+                Span[] spans = outSpans.getValue();
+                String[] fixedtokens = outFixedtokens.getValue();
+                String sentence = outSentence.getValue();
+                
+                if (contentindex.IndexingType == IndexingType.NGRAMSTATS) {
+                	// determine parts of speech
+                    String[] tags = posTagTokens(fixedtokens);
+                    fixTags(tokens,tags);
+                    
+                    Parse[] posnodes = createParsesFromTokensAndTags(sentence,fixedtokens,spans,tags);
+                    
+                	RefSupport<HashMap<Integer,Integer>> outStartmarkers = new RefSupport<HashMap<Integer,Integer>>();
+                    String posedSentence = buildPosSentence(posnodes, outStartmarkers);
+                    HashMap<Integer,Integer> startmarkers = outStartmarkers.getValue();
+
+                    CSList<String> mentions = generateNgramMentions(posedSentence,startmarkers, contentindex.NgramMaxN, contentindex.NgramBreakAtPunctuation);
+                    contentindex.addNgramMentions(mentions);
+                    
+                } else {
+	                if (contentindex.ContentParseDepth == IndexingConsts.ParseDepth.SHALLOW) {
+	                	// determine parts of speech
+	                    String[] tags = posTagTokens(fixedtokens);
+	                    fixTags(tokens,tags);
+	                    // chunk words into groups
+	                    String[] chunks = chunkSentence(fixedtokens,tags);
+	                    // fix some combinations
+	                    fixChunks(fixedtokens,tags,chunks);
+	                	pindex.SentenceParses[j] = createParseFromChunks(sentence,fixedtokens,spans,tags,chunks);
+	                }
+	                else if (contentindex.ContentParseDepth == IndexingConsts.ParseDepth.DEEP)
+	                	pindex.SentenceParses[j] = parseSentence(sentence,spans);
+                }
+            }
+        }
+        contentindex.ActionTimestamps.put("Chunk/Parse:stop", Calendar.getInstance().getTime());
+    }
+
+    /*
     public void parse(ContentIndex contentindex) throws Exception {
         contentindex.ActionTimestamps.put("Parse:start", Calendar.getInstance().getTime());
+        // TODO: need the next line?
         contentindex.ContentParseDepth = IndexingConsts.ParseDepth.DEEP;
         for (int i = 0;i < contentindex.ParagraphIndexes.length;i++)
         {
             ParagraphIndex pindex = contentindex.ParagraphIndexes[i];
             pindex.SentenceParses = new Parse[pindex.SentenceCount];
+            pindex.SentenceFlags = new SentenceFlags[pindex.SentenceCount];
+            pindex.ParagraphStats = new TextStats();
             for (int j = 0;j < pindex.SentenceCount;j++)
             {
                 String normalizedSentence = normalizeSentence(pindex.OriginalSentences[j]);
@@ -287,7 +365,8 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
         }
         contentindex.ActionTimestamps.put("Parse:stop", Calendar.getInstance().getTime());
     }
-
+	*/
+    
     public void findIdioms(ContentIndex contentindex) throws Exception {
         for (int i = 0;i < contentindex.ParagraphIndexes.length;i++)
         {
@@ -308,17 +387,19 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
             pindex.SpanMap = (HashMap<String,Span>[]) new HashMap[pindex.SentenceCount];
             for (int j = 0;j < pindex.SentenceCount;j++)
             {
-                // if we do chunking instead of parsing, then use Shallow Accumulation Breaks
-                RefSupport<FloatVector> refVar5 = new RefSupport<FloatVector>();
+                
+                RefSupport<FloatVector> outSentimentVector = new RefSupport<FloatVector>();
                 getSentimentVector(pindex.SentenceParses[j],
-                		pindex.SentenceFlags[j],contentindex.ContentParseDepth,refVar5);
-                pindex.SentenceSentiments[j] = refVar5.getValue();
-                RefSupport<String> refVar6 = new RefSupport<String>();
-                RefSupport<HashMap<String,Span>> refVar7 = new RefSupport<HashMap<String,Span>>();
+                		pindex.SentenceFlags[j],contentindex.ContentParseDepth,outSentimentVector);
+                pindex.SentenceSentiments[j] = outSentimentVector.getValue();
+                
+                // Make a nicer sentence (remove space between 's etc)
+                RefSupport<String> outIndexedSentence = new RefSupport<String>();
+                RefSupport<HashMap<String,Span>> outSpanMap = new RefSupport<HashMap<String,Span>>();
                 makeIndexedSentence(pindex.SentenceParses[j],
-                		pindex.SentenceFlags[j],pindex.SentenceSentiments[j],refVar6,refVar7);
-                pindex.IndexedSentences[j] = refVar6.getValue();
-                pindex.SpanMap[j] = refVar7.getValue();
+                		pindex.SentenceFlags[j],pindex.SentenceSentiments[j],outIndexedSentence,outSpanMap);
+                pindex.IndexedSentences[j] = outIndexedSentence.getValue();
+                pindex.SpanMap[j] = outSpanMap.getValue();
             }
         }
     }
@@ -344,7 +425,10 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
                     goodAsTopic = outGoodAsTopic.getValue();
                     int newStart = pindex.SpanMap[j].get(LangUtils.spanKey(phrase.get(0).getSpan())).getStart();
                     int newEnd = pindex.SpanMap[j].get(LangUtils.spanKey(phrase.get(phrase.size() - 1).getSpan())).getEnd();
-                    TextReference tref = new TextReference(i,j,new Span(newStart,newEnd));
+                    // add the common parent of parses so that we can find sentiments in DEEP parsing
+                    Parse parent = findCommonParentOfType(phrase,tlParentsOfGoodObjects);
+                    
+                    TextReference tref = new TextReference(i,j,new Span(newStart,newEnd),parent);
                     contentindex.addEntityReference(phrasestring, tref, goodAsTopic, goodAsTag);
                 }
                 for (Entry<String,SpanFlags> kvp : pindex.SentenceFlags[j].SpanFlags.entrySet())
@@ -355,7 +439,7 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
                     	String spanKey = kvp.getKey();
                         int newStart = pindex.SpanMap[j].get(spanKey).getStart();
                         int newEnd = pindex.SpanMap[j].get(spanKey).getEnd();
-                        TextReference tref = new TextReference(i,j,new Span(newStart,newEnd));
+                        TextReference tref = new TextReference(i,j,new Span(newStart,newEnd),null);
                         String intensitytoken = parse.getText().substring(newStart, newEnd);
                         String originaltext = FloatVector.getDimensionValueFromIntensityToken(intensitytoken,FloatVector.OriginalTextDimension);
                         contentindex.addEntityReference(originaltext,tref,null,true); // a Hashtag is a good tag, but an unknown quality topic
@@ -367,30 +451,70 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
     }
 
     private void buildEntitySentimentContext(ContentIndex contentindex) throws Exception {
-        CSList<String> processedSentences = new CSList<String>();
-        for (Entry<String,EntityStats> kvp : contentindex.ContentEntityStats.entrySet())
-        {
-            for (TextReference tref : kvp.getValue().References)
-            {
-                String parsenkey = ContentIndex.parSenKey(tref.ParagraphNum,tref.SentenceNum);
-                if (!processedSentences.contains(parsenkey))
-                {
-                    FloatVector sentencesentiment = contentindex.ParagraphIndexes[tref.ParagraphNum].SentenceSentiments[tref.SentenceNum];
-                    kvp.getValue().AggregateSentiment.accumulate(sentencesentiment,false);
-                    /*addDerivationSteps*/
-                    processedSentences.add(parsenkey);
-                }
-                 
-            }
-            processedSentences.clear();
-        }
+    	
+    	if (contentindex.ContentParseDepth == IndexingConsts.ParseDepth.DEEP) { 
+	        for (Entry<String,EntityStats> kvp : contentindex.ContentEntityStats.entrySet())
+	        {
+	            for (TextReference tref : kvp.getValue().References)
+	            {
+	                String parsenkey = ContentIndex.parSenKey(tref.ParagraphNum,tref.SentenceNum);
+	                
+	                //if (!processedSentences.contains(parsenkey))
+	                if (true)
+	                {
+	                    FloatVector sentencesentiment = contentindex.ParagraphIndexes[tref.ParagraphNum].SentenceSentiments[tref.SentenceNum];
+	                    
+	                    FloatVector entitysentiment = null;
+	                    if (tref.Parent != null)
+	                    {
+	                    	
+	                    	// TODO: the tref.Parent is the most immediate NP
+	                    	// Go one level up to the next NP
+	                    	
+	                    	
+	                    	entitysentiment = new FloatVector();
+	                    	entitysentiment.accumulate(sentencesentiment,/*spans*/null,true,/*scopeSpan*/tref.Parent.getSpan());
+	                    } else 
+	                    	entitysentiment = sentencesentiment;
+	                    
+	                    kvp.getValue().addRelatedSentiment(tref.ParagraphNum,tref.SentenceNum,entitysentiment);
+	                    /*addDerivationSteps*/
+	                    // processedSentences.add(parsenkey);
+	                }
+	                 
+	            }
+	            // processedSentences.clear();
+	        }
+
+    	} else {
+    	
+	        CSList<String> processedSentences = new CSList<String>();
+	        for (Entry<String,EntityStats> kvp : contentindex.ContentEntityStats.entrySet())
+	        {
+	            for (TextReference tref : kvp.getValue().References)
+	            {
+	                String parsenkey = ContentIndex.parSenKey(tref.ParagraphNum,tref.SentenceNum);
+	                if (!processedSentences.contains(parsenkey))
+	                {
+	                    FloatVector sentencesentiment = contentindex.ParagraphIndexes[tref.ParagraphNum].SentenceSentiments[tref.SentenceNum];
+	                    
+	                    kvp.getValue().addRelatedSentiment(tref.ParagraphNum,tref.SentenceNum,sentencesentiment);
+	                    /*addDerivationSteps*/
+	                    processedSentences.add(parsenkey);
+	                }
+	                 
+	            }
+	            processedSentences.clear();
+	        }
+    		
+    	}
     }
 
     private void calculateEntityScore(ContentIndex contentindex) throws Exception {
         for (Entry<String,EntityStats> kvp : contentindex.ContentEntityStats.entrySet())
         {
             int numref = kvp.getValue().References.size();
-            float sentscore = kvp.getValue().AggregateSentiment.sumAllIntensities();
+            float sentscore = kvp.getValue().getAggregateSentiment().sumAllIntensities();
             int length = kvp.getValue().Entity.length();
             kvp.getValue().Score = 1.0F;
             // 1 reference yields factor of 1, 2 references - 1.7, 3 - 2.1
@@ -412,6 +536,10 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
     * Selects top N tags from ContentEntityStats, ignoring already included tags
     */
     private void selectTopTags(ContentIndex contentindex) throws Exception {
+    	
+    	// TODO 7/8/18: If textencoding , then select all tags
+    	// if (contentindex.IndexingType == IndexingConsts.IndexingType.TEXTENCODING) {
+    	
     	EntityStats[] statsArray = contentindex.ContentEntityStats.values().toArray(new EntityStats[contentindex.ContentEntityStats.values().size()]);
     	CSList<EntityStats> sorted = new CSList<EntityStats>(statsArray);
         Collections.sort(sorted, new EntityScoreComparer());
@@ -493,6 +621,8 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
     }
 
     private void chunkLabelledSentences(ContentIndex contentindex) throws Exception {
+    	// TODO: 7/8/18: Add handling for contentindex.ParseDepth == DEEP
+    	// create 1 chunk per sentence
     	
     	if (contentindex.ContentType == IndexingConsts.ContentType.UNKNOWN || 
     		IndexingConsts.lstArticleContentTypes.contains(contentindex.ContentType))
@@ -627,6 +757,9 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
             }
             contentindex.SelectedSentiments = toplist;
     	}
+    	
+    	// TODO: 7/8/18: when DEEP, select all
+    	
     }
 
     public void fixTokens(String[] rawtokens, SentenceFlags flags, RefSupport<Span[]> spans, RefSupport<String[]> fixedtokens, RefSupport<String> sentence) throws Exception {
@@ -909,6 +1042,31 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
         }
     }
 
+    /**
+     * Creates an array of Parses for processing by buildPosSentence to create Ngram stats for sentences
+     * @param text
+     * @param tokens
+     * @param tokenspans
+     * @param tags
+     * @return
+     * @throws Exception
+     */
+    public Parse[] createParsesFromTokensAndTags(String text, String[] tokens, Span[] tokenspans, String[] tags) throws Exception {
+
+    	Parse[] parses = new Parse[tokens.length];
+    	
+        for (int currentToken = 0;currentToken < tokens.length;currentToken++)
+        {
+            Parse tokenParse = new Parse(text, tokenspans[currentToken], AbstractBottomUpParser.TOK_NODE, 1.0, 1);
+            Parse posParse = new Parse(text, tokenspans[currentToken], tags[currentToken], 1.0, 1);
+            posParse.insert(tokenParse);
+            parses[currentToken] = posParse;
+        }
+        return parses;
+    }
+    
+    
+    
     public Parse createParseFromChunks(String text, String[] tokens, Span[] tokenspans, String[] tags, String[] chunks) throws Exception {
         Parse topParse = new Parse(text, new Span(0,text.length()), AbstractBottomUpParser.TOP_NODE, 1.0, 1);
         Parse sentenceParse = new Parse(text, new Span(0,text.length()), "S", 1.0, 1);
@@ -955,8 +1113,101 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
         rootParse.insert(chunkParse);
     }
 
+    
     public void findIdiomsInSentence(Parse parse, SentenceFlags parseflags) throws Exception {
-        Parse[] posnodes = parse.getTagNodes();
+        
+    	Parse[] posnodes = parse.getTagNodes();
+        
+    	RefSupport<HashMap<Integer,Integer>> outStartmarkers = new RefSupport<HashMap<Integer,Integer>>();
+        String posedSentence = buildPosSentence(posnodes, outStartmarkers);
+        HashMap<Integer,Integer> startmarkers = outStartmarkers.getValue();
+        
+        int processedToParseIdx = -1;
+        for (Entry<Integer,Integer> kvp : startmarkers.entrySet())
+        {
+            // kvp.Key is position in sentence, and kvp.Value is index in parse list
+            if (kvp.getValue() <= processedToParseIdx)
+                continue;
+             
+            String idiom = null;
+            String source = null;
+            int position = kvp.getKey();
+            RefSupport<String> refVar22 = new RefSupport<String>();
+            RefSupport<String> refVar23 = new RefSupport<String>();
+            mDicts.Idioms.KeyFastIndex.findLongestKeywordAtPosition(posedSentence,position,refVar22,refVar23);
+            idiom = refVar22.getValue();
+            source = refVar23.getValue();
+            if (idiom != null)
+            {
+                int startidx = kvp.getValue();
+                int endidx = startmarkers.get(position + idiom.length() + 1) - 1;
+                CSList<Parse> parselist = new CSList<Parse>();
+                for (int j = startidx;j <= endidx;j++)
+                    parselist.add(posnodes[j]);
+                parseflags.addIdiomOccurence(parselist,idiom);
+                processedToParseIdx = endidx;
+            }
+             
+        }
+    }
+    
+    public CSList<String> generateNgramMentions(String posSentence, HashMap<Integer,Integer> startmarkers, Integer ngramMaxN, Boolean ngramBreakAtPunctuation) {
+    	CSList<String> mentions = new CSList<String>();
+    	
+    	int numStarts = startmarkers.entrySet().size();
+    	int[] startmarkersArray = new int[numStarts]; 
+    	
+    	int i = 0;
+    	for (Entry<Integer,Integer> kvp : startmarkers.entrySet())
+        {
+            // kvp.Key is position in sentence, and kvp.Value is index in parse list
+    		startmarkersArray[i] = kvp.getKey();
+    		i++;
+        }
+    	
+    	Arrays.sort(startmarkersArray);
+    	
+    	i = 0;
+    	
+    	while (i < numStarts) {
+    		
+    		if (ngramBreakAtPunctuation) {
+    			// Check if current token is punctuation
+	    		if (isNgramBreakerToken(posSentence,startmarkersArray[i])) {
+	    			i++;
+	    			continue;
+	    		}
+    		}
+    		
+    		for (int j = 0; (j < ngramMaxN) && (i + j + 1 <= numStarts); j++) {
+    			
+    			if (ngramBreakAtPunctuation) 
+    	    		if (isNgramBreakerToken(posSentence,startmarkersArray[i+j]))
+    	    			break;
+    			
+    			String chunk;
+    			if (i + j + 1 == numStarts)
+    				chunk = posSentence.substring(startmarkersArray[i]);
+    			else
+    				chunk = posSentence.substring(startmarkersArray[i],startmarkersArray[i+j+1]-1);
+    			
+    			mentions.add(chunk);
+    		}
+    		i++;
+    		
+    	}
+    	
+    	return mentions;
+    }
+    
+    private Boolean isNgramBreakerToken(String posSentence, int tokenStart) {
+    	int slash = posSentence.indexOf('/', tokenStart );
+		String pos = posSentence.substring(slash+1,slash+2);
+		return tlNgramBreakerTypes.contains(pos);
+    }
+    
+    public String buildPosSentence(Parse[] posnodes, RefSupport<HashMap<Integer,Integer>> refStartmarkers) throws Exception {
+
         String posedSentence = "";
         HashMap<Integer,Integer> startmarkers = new HashMap<Integer,Integer>();
         for (int i = 0;i < posnodes.length;i++)
@@ -1014,34 +1265,10 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
                 posedSentence += " " + searchtoken;
             } 
         }
-        int processedToParseIdx = -1;
-        for (Entry<Integer,Integer> kvp : startmarkers.entrySet())
-        {
-            // kvp.Key is position in sentence, and kvp.Value is index in parse list
-            if (kvp.getValue() <= processedToParseIdx)
-                continue;
-             
-            String idiom = null;
-            String source = null;
-            int position = kvp.getKey();
-            RefSupport<String> refVar22 = new RefSupport<String>();
-            RefSupport<String> refVar23 = new RefSupport<String>();
-            mDicts.Idioms.KeyFastIndex.findLongestKeywordAtPosition(posedSentence,position,refVar22,refVar23);
-            idiom = refVar22.getValue();
-            source = refVar23.getValue();
-            if (idiom != null)
-            {
-                int startidx = kvp.getValue();
-                int endidx = startmarkers.get(position + idiom.length() + 1) - 1;
-                CSList<Parse> parselist = new CSList<Parse>();
-                for (int j = startidx;j <= endidx;j++)
-                    parselist.add(posnodes[j]);
-                parseflags.addIdiomOccurence(parselist,idiom);
-                processedToParseIdx = endidx;
-            }
-             
-        }
-    }
+    	
+        refStartmarkers.setValue(startmarkers);
+        return posedSentence;
+    }   
 
     private void buildText(ContentIndex contentindex, LabelledText ltext) throws Exception {
         LabelledPositionsV2 textpositions = new LabelledPositionsV2();
@@ -1130,7 +1357,7 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
              
             Integer newSpanStart = sb.length();
             sb.append(originaltext);
-            Span newSpan = new Span(newSpanStart,sb.length() - 1);
+            Span newSpan = new Span(newSpanStart,sb.length() - 1); // note that the new Span ends on the last character, and not on next
             spanmap.getValue().put(LangUtils.spanKey(posnodes[i].getSpan()), newSpan);
         }
         indexedSentence.setValue(sb.toString());
@@ -1156,6 +1383,14 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
             return true;      
     }
 
+    /**
+     * If we do chunking instead of parsing, then use Shallow Accumulation Breaks
+     * @param parse
+     * @param sentenceflags
+     * @param parsedepth
+     * @param parsevector
+     * @throws Exception
+     */
     private void getSentimentVector(Parse parse, SentenceFlags sentenceflags, ParseDepth parsedepth, RefSupport<FloatVector> parsevector) throws Exception {
         parsevector.setValue(null);
         if ((parse == null) || (StringSupport.equals(parse.getType(), "INC")) || (StringSupport.equals(parse.getType(), AbstractBottomUpParser.TOK_NODE)))
@@ -1167,17 +1402,16 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
         // check for null: sometimes the parse tree has null children
         // check for not complete: depending on beam size, sentence sometimes does not get parsed correctly
         Parse curparse = (!StringSupport.equals(parse.getType(), AbstractBottomUpParser.TOP_NODE)) ? parse : parse.getChildren()[0];
+        RefSupport<FloatVector> outParsevector = new RefSupport<FloatVector>();
         if (curparse.isPosTag())
         {
-            RefSupport<FloatVector> refVar25 = new RefSupport<FloatVector>();
-            getSentimentVectorFromPOSParse(curparse,sentenceflags,refVar25);
-            parsevector.setValue(refVar25.getValue());
+            getSentimentVectorFromPOSParse(curparse,sentenceflags,outParsevector);
+            parsevector.setValue(outParsevector.getValue());
         }
         else
         {
-            RefSupport<FloatVector> refVar26 = new RefSupport<FloatVector>();
-            accumulateVectors(curparse,sentenceflags,new CSList<Parse>(curparse.getChildren()),null,parsedepth,refVar26);
-            parsevector.setValue(refVar26.getValue());
+            accumulateVectors(curparse,sentenceflags,new CSList<Parse>(curparse.getChildren()),null,parsedepth,outParsevector);
+            parsevector.setValue(outParsevector.getValue());
             if (parsevector.getValue() != null)
             {
                 if (sentenceflags.isInQuotes(curparse.getSpan()))
@@ -1217,10 +1451,10 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
             if ((parsesToIgnore != null) && parsesToIgnore.contains(parse))
                 continue;
              
-            FloatVector parsevector;
-            RefSupport<FloatVector> refVar27 = new RefSupport<FloatVector>();
-            getSentimentVector(parse,sentenceflags,parsedepth,refVar27);
-            parsevector = refVar27.getValue();
+            RefSupport<FloatVector> outParsevector = new RefSupport<FloatVector>();
+            getSentimentVector(parse,sentenceflags,parsedepth,outParsevector);
+            FloatVector parsevector = outParsevector.getValue();
+            
             if (parsevector == null)
             {
                 plainParses.add(parse);
@@ -1236,6 +1470,7 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
                 else
                     listvector.getValue().accumulate(parsevector); 
             }
+            // TODO: Should we have the same here for DEEP parsing?
             else
                 listvector.getValue().accumulate(parsevector);  
         }
@@ -1245,7 +1480,7 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
         {
             Float modifierscore = listvector.getValue().get(FloatVector.ScoreDimension);
             Float sumallsentiment = listvector.getValue().sumAllSentimentIntensities() + listvector.getValue().sumOfIntensities(SentimentDimension.DimensionsRequiringModifier);
-            if ((modifierscore != null) && (sumallsentiment != null))
+            if ((modifierscore != null ) && (sumallsentiment != null) && parses.size() > 1)
             {
                 for (Parse parse : plainParses)
                 {
@@ -1271,9 +1506,9 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
                  
                 CSList<Span> spans = parsesToSpans(idiomoccurence.Parses);
                 if (spans.get(0).getStart() > negationstart)
-                    afternegationvector.accumulate(idiomvector,spans,true);
+                    afternegationvector.accumulate(idiomvector,spans,true,null);
                 else
-                    listvector.getValue().accumulate(idiomvector,spans,true); 
+                    listvector.getValue().accumulate(idiomvector,spans,true,null); 
             }
         }
          
@@ -1522,7 +1757,14 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
     }
 
     private void findGoodEntitiesInParses(CSList<Parse> parses, SentenceFlags sentenceflags, String parentType, CSList<CSList<Parse>> goodEntities) throws Exception {
-        CSList<Parse> runningPhrase = new CSList<Parse>();
+        
+    	// TODO (7/7/18): Handle the case of The (a DT) being capitalized and part of the Good Entity
+    	// As in "The Importance of Being Earnest , so thick with wit it plays like a reading from Bartlett 's Familiar Quotations"
+    	
+    	// TODO (7/8/18): For DEEP parsing, make sure we get at least one entity, even if it is not up to usual standards
+    	// For that, add even simplest NN, NNS
+    	
+    	CSList<Parse> runningPhrase = new CSList<Parse>();
         for (Parse parse : parses)
         {
             if (parse.isPosTag())
@@ -1571,9 +1813,9 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
         if (runningPhrase.size() > 0)
         {
             CSList<CSList<Parse>> foundchunks = null;
-            RefSupport<CSList<CSList<Parse>>> refVar42 = new RefSupport<CSList<CSList<Parse>>>();
-            findNounPhraseChunks(runningPhrase,refVar42);
-            foundchunks = refVar42.getValue();
+            RefSupport<CSList<CSList<Parse>>> outFoundchunks = new RefSupport<CSList<CSList<Parse>>>();
+            findNounPhraseChunks(runningPhrase,outFoundchunks);
+            foundchunks = outFoundchunks.getValue();
             goodEntities.addAll(foundchunks);
         }
          
@@ -1947,6 +2189,38 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
         else
         	return false;
     }
+    
+    private Parse findCommonParentOfType(CSList<Parse> children, CSList<String> parentTypes) throws Exception {
+    	
+    	if ((children == null) || (children.size() == 0)) 
+    		return null;
+    	 
+    	Parse commonParent = null;
+    	
+    	for (Parse child : children)
+        {
+    		// on the first child node we set commonParent to the parent of child, and on other children we keep calling getCommonParent 
+    		if (commonParent == null)
+    			commonParent = child.getParent();
+    		else 
+    			commonParent = commonParent.getCommonParent(child);
+        }
+    	
+    	if (commonParent == null)
+    		return null;
+    	
+    	if (parentTypes.contains(commonParent.getType()))
+    		return commonParent;
+    	else if (commonParent.getType().equals(AbstractBottomUpParser.TOP_NODE))
+    		return null; // we reached the top and still haven't found the right parent
+    	else {
+    		CSList<Parse> nextlevel = new CSList<Parse>();
+    		nextlevel.add(commonParent);
+    		return findCommonParentOfType( nextlevel, parentTypes );
+    	}
+    		
+    	
+    }
 
     private void findParsesOfTypes(CSList<Parse> parses, CSList<String> types, CSList<Parse> foundParses) throws Exception {
         for (Parse parse : parses)
@@ -2051,16 +2325,26 @@ public class EnglishIndexer  extends LanguageSpecificIndexer
         return mChunker.chunk( tokens, tags);
     }
 
-    /**
-     * Not currently used, because it is useful only for Deep Parsing.
-     * 
-     * @param sentence
-     * @return
-     * @throws Exception
-     */
-    private Parse parseSentence(String sentence) throws Exception {
-        //return mParser.parse(sentence);
-    	return null;
+    private Parse parseSentence(String sentence, Span[] spans) throws Exception {
+    	// hat tip to http://dpdearing.com/posts/2011/12/how-to-use-the-opennlp-1-5-0-parser/
+    	Parse p = new Parse(sentence,
+    		// a new span covering the entire text
+    		new Span(0, sentence.length()),
+    		// the label for the top if an incomplete node
+    		AbstractBottomUpParser.INC_NODE,
+    		// the probability of this parse 
+    		1,
+    		// the token index of the head of this parse
+    		0);
+
+    	for (int idx=0; idx < spans.length; idx++) {
+    		final Span span = spans[idx];
+    		// flesh out the parse with individual token sub-parses 
+    		p.insert(new Parse(sentence,span,AbstractBottomUpParser.TOK_NODE,0,idx));
+    	}
+
+        return mParser.parse(p);
+    	
     }
 
 }

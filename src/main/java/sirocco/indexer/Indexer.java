@@ -50,7 +50,7 @@ public class Indexer
         	return;
 		}
 		
-		if (contentindex.OriginalText == null || contentindex.OriginalText.isEmpty()) {
+		if (contentindex.OriginalText == null || contentindex.OriginalText.isEmpty() || contentindex.OriginalText.trim().isEmpty() ) {
 			// No need to run through full indexing. In the previous step we validated that other important fields are available
 			contentindex.IsIndexingSuccessful = true;
 			contentindex.populateResultsWithMinValues();

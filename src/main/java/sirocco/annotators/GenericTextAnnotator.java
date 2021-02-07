@@ -40,11 +40,24 @@ public abstract class GenericTextAnnotator
     public abstract String endTag(CSList<Character> labels) throws Exception ;
 
     public String annotate(ILabelledPositions lpositions, String text) throws Exception {
-        return annotate(lpositions,text,null,null);
+        return annotate(lpositions,text,false);
     }
 
-    // annotate only the specified entities and emotions
-    public String annotate(ILabelledPositions lpositions, String text, CSList<String> entityFilter, CSList<Character> labelFilter) throws Exception {
+    public String annotate(ILabelledPositions lpositions, String text, Boolean dropBeforeAfter) throws Exception {
+        return annotate(lpositions,text,null,null,dropBeforeAfter);
+    }
+
+    /**
+     * 
+     * @param lpositions
+     * @param text
+     * @param entityFilter Annotate only specified entities
+     * @param labelFilter Annotate only specified emotions
+     * @param dropBeforeAfter Do not output text before first and after last annotation (quote mode)
+     * @return
+     * @throws Exception
+     */
+    public String annotate(ILabelledPositions lpositions, String text, CSList<String> entityFilter, CSList<Character> labelFilter, Boolean dropBeforeAfter) throws Exception {
         StringBuilder sb = new StringBuilder();
         int tokenstart = 0;
         CSList<String> lowerEntityFilter = null;
@@ -63,7 +76,8 @@ public abstract class GenericTextAnnotator
                 if (kvp.getValue().IsSingleSpan)
                 {
                     if (kvp.getKey() - 1 >= tokenstart)
-                        sb.append(text.substring(tokenstart, (tokenstart) + ((kvp.getKey() - 1) - (tokenstart)+1)));
+                    	if (!(dropBeforeAfter && tokenstart == 0))
+                    		sb.append(text.substring(tokenstart, (tokenstart) + ((kvp.getKey() - 1) - (tokenstart)+1)));
                      
                     sb.append(startTag(kvp.getValue().StartLabels));
                     sb.append(text.substring(kvp.getKey(), (kvp.getKey()) + (1)));
@@ -73,7 +87,8 @@ public abstract class GenericTextAnnotator
                 else if (kvp.getValue().IsStart && !kvp.getValue().IsEnd)
                 {
                     if (kvp.getKey() - 1 >= tokenstart)
-                        sb.append(text.substring(tokenstart, (tokenstart) + ((kvp.getKey() - 1) - (tokenstart)+1)));
+                    	if (!(dropBeforeAfter && tokenstart == 0))
+                    		sb.append(text.substring(tokenstart, (tokenstart) + ((kvp.getKey() - 1) - (tokenstart)+1)));
                      
                     sb.append(startTag(kvp.getValue().StartLabels));
                     tokenstart = kvp.getKey();
@@ -81,7 +96,8 @@ public abstract class GenericTextAnnotator
                 else if (!kvp.getValue().IsStart && kvp.getValue().IsEnd)
                 {
                     if (kvp.getKey() >= tokenstart)
-                        sb.append(text.substring(tokenstart, tokenstart + (kvp.getKey())-tokenstart + 1));
+                    	if (!(dropBeforeAfter && tokenstart == 0))
+                    		sb.append(text.substring(tokenstart, tokenstart + (kvp.getKey())-tokenstart + 1));
                      
                     sb.append(endTag(kvp.getValue().EndLabels));
                     tokenstart = kvp.getKey() + 1;
@@ -95,7 +111,8 @@ public abstract class GenericTextAnnotator
         }
          
         if ((tokenstart) <= (text.length() - 1))
-            sb.append(text.substring(tokenstart));
+        	if (!(dropBeforeAfter))
+        		sb.append(text.substring(tokenstart));
          
         return sb.toString();
     }
