@@ -5,6 +5,9 @@ bin/
 # Ignore explicitely excluded folders
 unused/
 
+# Ignore test outputs
+src/test/resources/out/
+
 # Ignore Eclipse files.
 .classpath
 .project
@@ -13,6 +16,10 @@ unused/
 .fbExcludeFilterFile
 .apt_generated/
 .settings/
+
+# Ignore IntelliJ files.
+.idea/
+.run/
 
 # The build process generates the dependency-reduced POM, but it shouldn't be
 # committed.
