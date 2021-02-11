@@ -11,29 +11,85 @@ In our research and commercial application of Plutchik we were able to use signa
 
 Sirocco relies on [Apache OpenNLP](https://opennlp.apache.org/) to supply it with constituency-based parse trees of sentences.
 
-## Sirocco in Presentations and News
+## Sirocco in Presentations, News and Customer Use-Cases
 
-Strata NYC 2017 keynote 
-[Emotional arithmetic: How machine learning helps you understand customers in real time](https://conferences.oreilly.com/strata/strata-ny/public/schedule/detail/63895)
-by Chad Jennings from Google showed the results of emotion analysis performed by Sirocco
-[Video Recording](https://www.oreilly.com/ideas/emotional-arithmetic-how-machine-learning-helps-you-understand-customers-in-real-time)
+Sirocco was used by a major pharma company as a solution for automatically identifying high-quality consumer reviews and resurfacing them on a product page. 
 
-Sirocco was featured in the Strata NYC 2017 deep dive
-[Emotional arithmetic: A deep dive into how machine learning and big data help you understand customers in real time](https://conferences.oreilly.com/strata/strata-ny/public/schedule/detail/63620) by Chad Jennings (Google) and Eric Schmidt (Google)
-[Video Recording](https://www.safaribooksonline.com/library/view/strata-data-conference/9781491976326/video314135.html)
+We collaborated with Kalev Leetaru from [The GDELT Project](https://www.gdeltproject.org/) / Georgetown University and published a 3-part blog series ([Part 1](https://cloud.google.com/blog/big-data/2018/03/predicting-community-engagement-on-reddit-using-tensorflow-gdelt-and-cloud-dataflow-part-1), [Part 2](https://cloud.google.com/blog/big-data/2018/03/predicting-community-engagement-on-reddit-using-tensorflow-gdelt-and-cloud-dataflow-part-2), and [Part 3](https://cloud.google.com/blog/big-data/2018/03/predicting-community-engagement-on-reddit-using-tensorflow-gdelt-and-cloud-dataflow-part-3)) on sentiment analysis in News using Sirocco.
 
-## Roadmap
+We co-presented ([video recording](https://www.youtube.com/watch?v=tKISLQ87GO8), [slides](https://www.linkedin.com/posts/ssokolenko_cloudnext18da205predicting-reddit-community-activity-6758157371895287808-NyMC)) together with Reddit’s VP of Engineering Nick Caldwell at Cloud Next’18 on “Predicting user engagement at Reddit” and then developed Deep Learning prediction models for Reddit ([blog](https://medium.com/google-cloud/predicting-user-engagement-with-news-on-reddit-using-kaggle-or-colab-d5ef0dcaff6a), [kaggle notebook](https://www.kaggle.com/datancoffee/predicting-reddit-community-engagement-dataset)). 
 
-We are actively working on improving the quality of the Sirocco models as well as extending its availability on NLP frameworks. We are looking for contributors for helping us to accomplish this mission. See below for contact info.
-
-* Firebase app for consumers of news to gamefy the evaluation of idioms in context of real sentences. The goal is to improve the sentiment ratings of idioms. Everyone benefits. See the [Model Files repo](https://github.com/datancoffee/sirocco-mo)
-
-* Enrich the Google Cloud NLP API with Plutchik sentiment ratings
-
-* Use the Google Cloud NLP API (in addition to Apache OpenNLP) for tokenization, POS-tagging, and sentence-tree creation. Ultimately, provide Plutchik sentiment for both Cloud NLP and Apache OpenNLP.
+Sirocco was featured at Strata NYC 2017: 
+- In the keynote “Emotional arithmetic: How machine learning helps you understand customers in real time” by Chad Jennings from Google. Chad showed the results of emotion analysis performed by Sirocco ([Video Recording](https://www.oreilly.com/ideas/emotional-arithmetic-how-machine-learning-helps-you-understand-customers-in-real-time))
+- In the follow-up deep dive [“Emotional arithmetic: A deep dive into how machine learning and big data help you understand customers in real time”](https://conferences.oreilly.com/strata/strata-ny/public/schedule/detail/63620) by Chad Jennings (Google) and Eric Schmidt (Google) ([Video Recording](https://www.safaribooksonline.com/library/view/strata-data-conference/9781491976326/video314135.html))
  
 
-## How to Build Sirocco
+## Using Sirocco
+You can use Sirocco either by running the Sirocco Indexer application locally on your machine or by embedding the Sirocco library in your backend application. It is usually a good idea to start the Sirocco evaluation by making it work locally and running the provided test cases. After reviewing the output results produced by the Indexer tool, and understanding how you can use Sirocco functionality in your system, you can add the Sirocco library to your backend app. While the Sirocco library is written in Java, there are frameworks now that will allow you using it in data pipelines written in Python, Go, and even SQL. The Apache Beam SDK is one of such tools, and the Google Cloud Dataflow service in the Google Cloud allows you operating Sirocco in a fully managed and serverless way. Review the [Dataflow Opinion Analysis](https://github.com/GoogleCloudPlatform/dataflow-opinion-analysis) project for examples of how to embed Sirocco in ETL pipelines running in Cloud Dataflow.
+
+
+### How to run Sirocco on your local machine
+The steps for configuring and running the Sirocco Indexer locally are as follows:
+
+- Install tools necessary for compiling and deploying the code in this project.
+- Download and install the latest Opinion Model files
+- Clone the Sirocco repo to local machine
+- Build Sirocco
+- Run the tests
+
+
+#### Installing Prerequisites
+
+Install tools necessary for compiling and deploying the code in this sample, if not already on your system, specifically git,  Java and Maven:
+
+* Install [`git`](https://git-scm.com/downloads). If you have Homebrew, the command is
+```
+brew install git
+```
+
+* Download and install the [Java Development Kit (JDK)](http://www.oracle.com/technetwork/java/javase/downloads/index.html) version 1.8 or later. Verify that the JAVA_HOME environment variable is set and points to your JDK installation.
+
+* [Download](http://maven.apache.org/download.cgi) and [install](http://maven.apache.org/install.html) Apache Maven. With Homebrew, the command is:
+```
+brew install maven
+```
+
+#### Install Latest Opinion Model Files 
+
+The [Sirocco Model Files repo](https://github.com/datancoffee/sirocco-mo/releases) contains all the recent releases of model files. You can also find the source files used for bulding the model jar. Download the latest sirocco-mo-x.y.z.jar on the release page of the repo.
+
+* Go to the directory where the downloaded sirocco-mo-x.y.z.jar files are located.
+
+* Install the Sirocco model file in your local Maven repository. Replace x.y.z with downloaded version.
+
+```
+mvn install:install-file \
+  -DgroupId=sirocco.sirocco-mo \
+  -DartifactId=sirocco-mo \
+  -Dpackaging=jar \
+  -Dversion=x.y.z \
+  -Dfile=sirocco-mo-x.y.z.jar \
+  -DgeneratePom=true
+```
+
+
+#### Clone Sirocco repo to local machine
+
+To clone the GitHub repository to your computer, run the following command:
+
+```
+git clone https://github.com/datancoffee/sirocco
+```
+
+Go to the `sirocco` directory. The exact path depends on where you placed the directory when you cloned the sample files from
+GitHub.
+
+```
+cd sirocco
+```
+
+
+#### How to Build Sirocco
 
 You need to have Java 8 and Maven 3 installed.
 
@@ -49,10 +105,6 @@ mvn install:install-file -Dfile=target/sirocco-sa-1.0.0.jar -DpomFile=pom.xml
 ```
 
 The build process will create a shaded jar sirocco-sa-x.y.z.jar that contains all dependencies (including OpenNLP packages) in the target directory. This jar does not contain model files and these need to be downloaded separately (see next step). 
-
-## How to Get the Latest Model Files 
-
-The [Sirocco Model Files repo](https://github.com/datancoffee/sirocco-mo/releases) contains all the recent releases of model files. You can also find the source files used for bulding the model jar. Download the latest sirocco-mo-x.y.z.jar on the release page of the repo.
 
 
 ## How to Incorporate Sirocco in Your Project
@@ -77,15 +129,77 @@ You will also need to add a dependency to the model files
 </dependency>
 ```
 
-## How to Run Standard Test Cases
+## How to Run Standard and Your Own Tests
 
-This repo contains a set of blog posts and other text documents that can be used as inputs for verification of changes. The main test script that invokes the Sirocco Indexer is located in the /src/test/scripts/ folder. It runs the indexer through all  files with .txt extensions in the /src/test/resources/in folder and produces outputs in the /src/test/resources/out folder. To run the test script, execute the following command in shell 
+This repo contains a set of blog posts and other text documents that can be used as inputs for verification of changes. The test scripts that invoke the Sirocco Indexer are located in the **src/test/scripts/** folder. You can use these scripts to run the indexer on *your own data* as well (just make sure to put your files in the input directory specified in the script).
+
+
+The **runindexer.sh** script processes files with **.txt** extensions while the **runindexercsv.sh** script processes **.csv** files. Both scripts run the indexer through all files of their associated extensions in the **src/test/resources/in** folder (configurable in the script) and produce outputs in the **src/test/resources/out** folder (also configurable in the script). 
+
+### Processing bag-of-properties TXT files
+The first script expects each document to be in its own .txt file, and have the following format.
 
 ```
-./src/test/scripts/runindexer.sh TOPSENTIMENTS
+Title=<Title>
+Author=<Author> 
+PubTime=<yyyy-mm-dd hh:mm:ss>
+Url=<Url>
+Language={EN | UN}
+
+<Text of the article>
+```
+To run the test script, execute the following command in shell 
+
+```
+./src/test/scripts/runindexer.sh TOPSENTIMENTS SHALLOW
 ```
 
-The test script accepts a single parameter - the indexing type. The acceptable values are FULLINDEX and TOPSENTIMENTS. When Top Sentiments is specified, the Indexer will select the top 4 sentence chunks (a few sequential sentences in text that have the same sentiement valence) in input text and output them in the output file. When Full Index is selected, all sentence chunks will be output.
+The runindexer.sh test script accepts two parameters - the indexing type and parsing type. For indexing type the acceptable values are FULLINDEX and TOPSENTIMENTS. When TOPSENTIMENTS is specified, the Indexer will select the top 4 sentence chunks (a few sequential sentences in text that have the same sentiement valence) in input text and output them in the output file. When FULLINDEX is selected, all sentence chunks will be output. 
+
+For parsing type the acceptable values are DEEP, SHALLOW, DEPENDENCY. Parsing type refers to the type of a language tree and subsequent traversing of that tree when connecting entities with sentiments. DEEP and SHALLOW parsing types will cause Sirocco to use [constituency-based trees](https://en.wikipedia.org/wiki/Parse_tree#Constituency-based_parse_trees) and DEPENDENCY parsing type will lead to Sirrocco using [dependency-based trees](https://en.wikipedia.org/wiki/Parse_tree#Dependency-based_parse_trees).
+
+```
+./src/test/scripts/runindexer.sh FULLINDEX DEEP
+```
+Note that while DEEP parsing provides the best quality associations of entities and sentiments, this parsing mode is still work-in-progress (as of Feb 2021). Currently, the SHALLOW parsing mode is the most tested mode. The DEPENDENCY parsing mode is also work-in-progress.
+
+
+### Processing CSV files
+If you have .csv files with multiple documents (text pieces) per file, you can process them with the **runindexercsv.sh** script. The CSV file can have an unlimited number of columns, but the indexer will be interested in two specific ones: the column that contains the external ID of the document as well as the column that contains the text. 
+
+Here is an example of a CSV file with two documents, each in its own CSV record.
+```
+SentenceId,PhraseId,Phrase,Sentiment
+6,167,A comedy-drama of nearly epic proportions rooted in a sincere performance by the title character undergoing midlife crisis .,4
+179,4684,"Beautifully crafted , engaging filmmaking that should attract upscale audiences hungry for quality and a nostalgic , twisty yarn that will keep them guessing .",4
+```
+
+Because of this, when processing CSV files you have to specify 4 parameters: Indexing Type, Parsing Type, Item Id Column Index, and Text Column Index. Here is an example that does Shallow parsing of the above CSV file, and sets the Item ID column Index to 1 (meaning, it's the second column in the file, labelled PhraseId), and specifies the Text column Index as 2 (meaning, as the third column in the file, labelled Phrase).
+ 
+```
+./src/test/scripts/runindexercsv.sh FULLINDEX SHALLOW 1 2
+```
+
+Note the following when processing CSV files:
+- The indexer expects that there is a header row. All rows starting with the second one will be processed as documents.
+- The column indexes for Item ID and Text columns are zero-based. The first column has the index of 0
+- The Item ID does not have to be numeric. The value inside that column will be interpreted as a string 
+- The Sirocco indexer is capable of handling text pieces that have line breaks in them. These text pieces need to be put in quotes.
+
+
+### 
+
+
+## Roadmap
+
+We are actively working on improving the quality of the Sirocco models as well as extending its availability on NLP frameworks. We are looking for contributors for helping us to accomplish this mission. See below for contact info.
+
+* Firebase app for consumers of news to gamefy the evaluation of idioms in context of real sentences. The goal is to improve the sentiment ratings of idioms. Everyone benefits. See the [Model Files repo](https://github.com/datancoffee/sirocco-mo)
+
+* Enrich the Google Cloud NLP API with Plutchik sentiment ratings
+
+* Use the Google Cloud NLP API (in addition to Apache OpenNLP) for tokenization, POS-tagging, and sentence-tree creation. Ultimately, provide Plutchik sentiment for both Cloud NLP and Apache OpenNLP.
+
 
 ## Additional Publications and Documentation
 

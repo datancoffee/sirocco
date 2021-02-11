@@ -25,33 +25,22 @@
  *******************************************************************************/
 package sirocco.cmdline.indexer;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVRecord;
-import org.apache.commons.io.IOUtils;
-
 import opennlp.tools.cmdline.BasicCmdLineTool;
 import opennlp.tools.cmdline.CmdLineUtil;
 import opennlp.tools.cmdline.TerminateToolException;
-import opennlp.tools.cmdline.ArgumentParser.OptionalParameter;
-import opennlp.tools.cmdline.ArgumentParser.ParameterDescription;
-import opennlp.tools.dictionary.Dictionary;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.io.IOUtils;
 import sirocco.indexer.Indexer;
 import sirocco.indexer.IndexingConsts;
-import sirocco.indexer.IndexingConsts.ParseDepth;
 import sirocco.indexer.util.LogUtils;
 import sirocco.model.ContentIndex;
 import sirocco.model.serialization.AvroSerializer;
 import sirocco.model.summary.ContentIndexSummary;
+
+import java.io.*;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
 
 public class IndexerTool extends BasicCmdLineTool {
 
@@ -80,8 +69,8 @@ public class IndexerTool extends BasicCmdLineTool {
     String recordDelimiters = params.getRecordDelimiters();
     Boolean readAsCSV = params.getReadAsCSV();
 
-    Integer textColumnIdx = (params.getTextColumnIdx()!="") ? Integer.valueOf(params.getTextColumnIdx()) : null;
-	Integer collectionItemIdIdx = (params.getCollectionItemIdIdx()!="") ? Integer.valueOf(params.getCollectionItemIdIdx()) : null;
+    Integer textColumnIdx = (params.getTextColumnIdx()!=null) ? Integer.valueOf(params.getTextColumnIdx()) : null;
+	Integer collectionItemIdIdx = (params.getCollectionItemIdIdx()!=null) ? Integer.valueOf(params.getCollectionItemIdIdx()) : null;
     
     CmdLineUtil.checkInputFile("input file of the document to be indexed", dictInFile);
     CmdLineUtil.checkOutputFile("output file with sentiment index", dictOutFile);

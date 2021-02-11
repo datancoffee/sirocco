@@ -26,12 +26,11 @@
 
 package sirocco.cmdline.indexer;
 
-import java.io.File;
-
-import opennlp.tools.cmdline.ArgumentParser.ParameterDescription;
 import opennlp.tools.cmdline.ArgumentParser.OptionalParameter;
+import opennlp.tools.cmdline.ArgumentParser.ParameterDescription;
 import opennlp.tools.cmdline.params.EncodingParameter;
-import sirocco.indexer.IndexingConsts;
+
+import java.io.File;
 
 /**
  * Params for Dictionary tools.
@@ -66,6 +65,7 @@ interface IndexerParams extends EncodingParameter {
   String getTextColumnIdx();
 	
   @ParameterDescription(valueName = "collectionItemIdIdx", description ="(Optional) CSV inputs: Zero-based index of the Collection Item ID column - unique identifier - in input file")
+  @OptionalParameter (defaultValue = "")
   String getCollectionItemIdIdx();
   
 

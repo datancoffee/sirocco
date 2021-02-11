@@ -2,18 +2,19 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>sirocco.sirocco-sa</groupId>
   <artifactId>sirocco-sa</artifactId>
-  <version>1.0.8</version>
+  <version>1.0.9</version>
   <packaging>jar</packaging>
   <name>Sirocco Sentiment Analysis</name>
   <description>The sentiment analysis SDK</description>
   <build>
     <plugins>
       <plugin>
+	    <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.5.1</version>
         <configuration>
-          <source/>
-          <target/>
+		  <source>1.8</source>
+		  <target>1.8</target>
 		  <excludes>
 			<exclude>sirocco/Unused/**/*</exclude>
 			<exclude>CS2JNet/System/Net/Mail/*</exclude> 
@@ -125,6 +126,11 @@
 	    <groupId>org.apache.commons</groupId>
 	    <artifactId>commons-csv</artifactId>
 	    <version>1.5</version>
-	</dependency>		
+	</dependency>
+	<dependency>
+		<groupId>javax.mail</groupId>
+		<artifactId>mail</artifactId>
+		<version>1.5.0-b01</version>
+	</dependency>
   </dependencies>
 </project>
