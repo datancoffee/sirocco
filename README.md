@@ -58,7 +58,7 @@ brew install maven
 
 The [Sirocco Model Files repo](https://github.com/datancoffee/sirocco-mo/releases) contains all the recent releases of model files. You can also find the source files used for bulding the model jar. Download the latest sirocco-mo-x.y.z.jar on the release page of the repo.
 
-* Go to the directory where the downloaded sirocco-mo-x.y.z.jar files are located.
+* Go to the directory where the downloaded sirocco-mo-x.y.z.jar file is located.
 
 * Install the Sirocco model file in your local Maven repository. Replace x.y.z with downloaded version.
 
@@ -89,7 +89,7 @@ cd sirocco
 ```
 
 
-#### How to Build Sirocco
+#### Building Sirocco
 
 You need to have Java 8 and Maven 3 installed.
 
@@ -98,18 +98,121 @@ Build and install the Sirocco library
 mvn clean install
 ```
 
-Alternatively, run the package and install steps separately
+Alternatively, run the package and install steps separately (don't forget to replace x.y.z with the active version of Sirocco)
 ```
 mvn clean package
-mvn install:install-file -Dfile=target/sirocco-sa-1.0.0.jar -DpomFile=pom.xml
+mvn install:install-file -Dfile=target/sirocco-sa-x.y.z.jar -DpomFile=pom.xml
 ```
 
 The build process will create a shaded jar sirocco-sa-x.y.z.jar that contains all dependencies (including OpenNLP packages) in the target directory. This jar does not contain model files and these need to be downloaded separately (see next step). 
 
 
-## How to Incorporate Sirocco in Your Project
+#### Running Included Test Datasets and Your Own Tests
 
-Once you built and installed the Sirocco library sirocco-sa-x.y.z.jar and Sirocco Model files sirocco-mo-x.y.z.jar, add the dependency to your project's pom.xml file.
+This repo contains a set of blog posts and other text documents that can be used as inputs for verification of changes. These test datasets are located in the **src/test/resources/testdatasets** folder. 
+
+The test scripts that invoke the Sirocco Indexer are located in the **src/test/scripts/** folder. The **runindexer.sh** script processes files with **.txt** extensions while the **runindexercsv.sh** script processes **.csv** files. Both scripts run the indexer through all files of their associated extensions in the **src/test/resources/in** folder (configurable in the script) and produce outputs in the **src/test/resources/out** folder (also configurable in the script). You can use these scripts to run the indexer on *your own data* as well (just make sure to put your files in the input directory specified in the script).
+
+##### Preparing input and output folders and making scripts executable
+
+To do a test run, copy the following test datasets into the input folder.
+
+```
+cp -r src/test/resources/testdatasets/articles-col1 src/test/resources/in
+cp -r src/test/resources/testdatasets/kaggle-rotten-tomato src/test/resources/in
+```
+
+You also need to create output folders, and their names need to match the names of the input folders.
+```
+mkdir src/test/resources/out
+mkdir src/test/resources/out/articles-col1
+mkdir src/test/resources/out/kaggle-rotten-tomato
+```
+
+Lastly, make sure that the test scripts are executable
+```
+chmod +x src/test/scripts/*.sh
+```
+
+##### Processing bag-of-properties TXT files
+For our first test run, let's process TXT files in the **articles-col1** folder. The **runindexer.sh** script expects .txt files to have the following format.
+
+```
+Title=<Title>
+Author=<Author> 
+PubTime=<yyyy-mm-dd hh:mm:ss>
+Url=<Url>
+Language={EN | UN}
+
+<Text of the article>
+```
+You can have multiple documents in a .txt file, but they need to be separated by a special separator, which by default is ASCII character 30 (RS). You can change the separator if you modify the script.
+
+To run the test script, execute the following command in shell 
+
+```
+src/test/scripts/runindexer.sh TOPSENTIMENTS SHALLOW
+```
+
+The results of Sirocco indexing can be reviewed in the src/test/resources/out/articles-col1 folder
+```
+ls src/test/resources/out/articles-col1
+```
+
+The runindexer.sh test script accepts two parameters - the **Indexing Type** and **Parsing Type**. For indexing type the acceptable values are FULLINDEX and TOPSENTIMENTS. When TOPSENTIMENTS is specified, the Indexer will select the top 4 sentence chunks (a few sequential sentences in text that have the same sentiement valence) in input text and output them in the output file. When FULLINDEX is selected, all sentence chunks will be output. 
+
+For parsing type the acceptable values are DEEP, SHALLOW, DEPENDENCY. Parsing type refers to the type of a language tree and subsequent traversing of that tree when connecting entities with sentiments. DEEP and SHALLOW parsing types will cause Sirocco to use [constituency-based trees](https://en.wikipedia.org/wiki/Parse_tree#Constituency-based_parse_trees) and DEPENDENCY parsing type will lead to Sirrocco using [dependency-based trees](https://en.wikipedia.org/wiki/Parse_tree#Dependency-based_parse_trees).
+
+```
+./src/test/scripts/runindexer.sh FULLINDEX DEEP
+```
+Note that while DEEP parsing provides the best quality associations of entities and sentiments, this parsing mode is still work-in-progress (as of Feb 2021). Currently, the SHALLOW parsing mode is the most tested mode. The DEPENDENCY parsing mode is also work-in-progress.
+
+
+##### Processing CSV files
+For our second test run, let's process CSV files in the **kaggle-rotten-tomato** folder.
+
+If you have .csv files with multiple documents (text pieces) per file, you can process them with the **runindexercsv.sh** script. The CSV file can have an unlimited number of columns, but the indexer will be interested in two specific ones: the column that contains the external ID of the document as well as the column that contains the text. 
+
+Here is an example of a CSV file with two documents, each in its own CSV record.
+```
+SentenceId,PhraseId,Phrase,Sentiment
+6,167,A comedy-drama of nearly epic proportions rooted in a sincere performance by the title character undergoing midlife crisis .,4
+179,4684,"Beautifully crafted , engaging filmmaking that should attract upscale audiences hungry for quality and a nostalgic , twisty yarn that will keep them guessing .",4
+```
+
+Because of this, when processing CSV files you have to specify 4 parameters: Indexing Type, Parsing Type, Item Id Column Index, and Text Column Index. Here is an example that does Shallow parsing of the above CSV file, and sets the Item ID column Index to 1 (meaning, it's the second column in the file, labelled PhraseId), and specifies the Text column Index as 2 (meaning, as the third column in the file, labelled Phrase).
+ 
+```
+./src/test/scripts/runindexercsv.sh FULLINDEX SHALLOW 1 2
+```
+
+The results of Sirocco indexing can be reviewed in the src/test/resources/out/kaggle-rotten-tomato folder
+```
+ls src/test/resources/out/kaggle-rotten-tomato
+```
+
+
+Note the following when processing CSV files:
+- The indexer expects that there is a header row. All rows starting with the second one will be processed as documents.
+- The column indexes for Item ID and Text columns are zero-based. The first column has the index of 0
+- The Item ID does not have to be numeric. The value inside that column will be interpreted as a string 
+- The Sirocco indexer is capable of handling text pieces that have line breaks in them. These text pieces need to be put in quotes.
+
+
+### How to Incorporate Sirocco in Your Project
+After running the Sirocco Indexer on included test datasets and your own data and verifying that its output is useful for you, you might decide that you want to embed Sirocco in your own application. 
+- You could embed Sirocco into a data processing pipeline that processes large volumes of documents in batch or streaming mode
+- Or you could embed Sirocco into an event-driven application that calls Sirocco as documents arrive 
+
+A good example of the first type of Sirocco usage is the [Dataflow Opinion Analysis](https://github.com/GoogleCloudPlatform/dataflow-opinion-analysis) project. But even if you are building an event-driven app, the Dataflow Opinion Analysis project can provide good pointers to the API and its usage.
+
+
+#### Including the Sirocco library and Sirocco Model Files into your binary
+
+Install the Sirocco library sirocco-sa-x.y.z.jar and Sirocco Model files sirocco-mo-x.y.z.jar
+
+Add the dependency to your project's pom.xml file.
 
 ```
 <dependency>
@@ -129,65 +232,6 @@ You will also need to add a dependency to the model files
 </dependency>
 ```
 
-## How to Run Standard and Your Own Tests
-
-This repo contains a set of blog posts and other text documents that can be used as inputs for verification of changes. The test scripts that invoke the Sirocco Indexer are located in the **src/test/scripts/** folder. You can use these scripts to run the indexer on *your own data* as well (just make sure to put your files in the input directory specified in the script).
-
-
-The **runindexer.sh** script processes files with **.txt** extensions while the **runindexercsv.sh** script processes **.csv** files. Both scripts run the indexer through all files of their associated extensions in the **src/test/resources/in** folder (configurable in the script) and produce outputs in the **src/test/resources/out** folder (also configurable in the script). 
-
-### Processing bag-of-properties TXT files
-The first script expects each document to be in its own .txt file, and have the following format.
-
-```
-Title=<Title>
-Author=<Author> 
-PubTime=<yyyy-mm-dd hh:mm:ss>
-Url=<Url>
-Language={EN | UN}
-
-<Text of the article>
-```
-To run the test script, execute the following command in shell 
-
-```
-./src/test/scripts/runindexer.sh TOPSENTIMENTS SHALLOW
-```
-
-The runindexer.sh test script accepts two parameters - the indexing type and parsing type. For indexing type the acceptable values are FULLINDEX and TOPSENTIMENTS. When TOPSENTIMENTS is specified, the Indexer will select the top 4 sentence chunks (a few sequential sentences in text that have the same sentiement valence) in input text and output them in the output file. When FULLINDEX is selected, all sentence chunks will be output. 
-
-For parsing type the acceptable values are DEEP, SHALLOW, DEPENDENCY. Parsing type refers to the type of a language tree and subsequent traversing of that tree when connecting entities with sentiments. DEEP and SHALLOW parsing types will cause Sirocco to use [constituency-based trees](https://en.wikipedia.org/wiki/Parse_tree#Constituency-based_parse_trees) and DEPENDENCY parsing type will lead to Sirrocco using [dependency-based trees](https://en.wikipedia.org/wiki/Parse_tree#Dependency-based_parse_trees).
-
-```
-./src/test/scripts/runindexer.sh FULLINDEX DEEP
-```
-Note that while DEEP parsing provides the best quality associations of entities and sentiments, this parsing mode is still work-in-progress (as of Feb 2021). Currently, the SHALLOW parsing mode is the most tested mode. The DEPENDENCY parsing mode is also work-in-progress.
-
-
-### Processing CSV files
-If you have .csv files with multiple documents (text pieces) per file, you can process them with the **runindexercsv.sh** script. The CSV file can have an unlimited number of columns, but the indexer will be interested in two specific ones: the column that contains the external ID of the document as well as the column that contains the text. 
-
-Here is an example of a CSV file with two documents, each in its own CSV record.
-```
-SentenceId,PhraseId,Phrase,Sentiment
-6,167,A comedy-drama of nearly epic proportions rooted in a sincere performance by the title character undergoing midlife crisis .,4
-179,4684,"Beautifully crafted , engaging filmmaking that should attract upscale audiences hungry for quality and a nostalgic , twisty yarn that will keep them guessing .",4
-```
-
-Because of this, when processing CSV files you have to specify 4 parameters: Indexing Type, Parsing Type, Item Id Column Index, and Text Column Index. Here is an example that does Shallow parsing of the above CSV file, and sets the Item ID column Index to 1 (meaning, it's the second column in the file, labelled PhraseId), and specifies the Text column Index as 2 (meaning, as the third column in the file, labelled Phrase).
- 
-```
-./src/test/scripts/runindexercsv.sh FULLINDEX SHALLOW 1 2
-```
-
-Note the following when processing CSV files:
-- The indexer expects that there is a header row. All rows starting with the second one will be processed as documents.
-- The column indexes for Item ID and Text columns are zero-based. The first column has the index of 0
-- The Item ID does not have to be numeric. The value inside that column will be interpreted as a string 
-- The Sirocco indexer is capable of handling text pieces that have line breaks in them. These text pieces need to be put in quotes.
-
-
-### 
 
 
 ## Roadmap
