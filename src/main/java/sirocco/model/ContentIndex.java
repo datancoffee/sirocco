@@ -34,7 +34,6 @@ import sirocco.annotators.BriefLogTextAnnotator;
 import sirocco.annotators.ExtendedLogTextAnnotator;
 import sirocco.indexer.FloatVector;
 import sirocco.indexer.IndexingConsts;
-import sirocco.indexer.Language;
 import sirocco.indexer.util.LangUtils;
 import sirocco.model.summary.ContentIndexSummary;
 
@@ -132,19 +131,24 @@ public class ContentIndex
     
     public ContentIndex() {}
     
-    public ContentIndex(String content, IndexingConsts.IndexingType indexingType, 
-    		IndexingConsts.ContentType cueType, Long processingTime)  {
-        this(content, indexingType, cueType,processingTime, null,null,null,null, null, null, null, null, null);
+    public ContentIndex(String content,
+            IndexingConsts.IndexingType indexingType,
+    		IndexingConsts.ContentType cueType,
+            IndexingConsts.ParseDepth parseDepth,
+            Long processingTime)  {
+        this(content, indexingType, cueType, parseDepth, processingTime, null,null,null,null, null, null, null, null, null);
     }
     
     public ContentIndex(String content, IndexingConsts.IndexingType indexingType, 
-    		IndexingConsts.ContentType cueType, Long processingTime,
+    		IndexingConsts.ContentType cueType, IndexingConsts.ParseDepth parseDepth,
+            Long processingTime,
     	    String url, Long publicationTime,  String title, String author, 
     	    String documentCollectionId, String collectionItemId,
     	    String parentUrl, Long parentPubTime, String[] metaFields)  {
         this.OriginalText = content;
         this.IndexingType = indexingType;
         this.ContentType = cueType;
+        this.ContentParseDepth = parseDepth;
         this.ProcessingTime = processingTime; 
         this.Url = url;
         this.PublicationTime = publicationTime;

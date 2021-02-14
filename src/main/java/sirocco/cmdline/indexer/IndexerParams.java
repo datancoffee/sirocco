@@ -49,9 +49,11 @@ interface IndexerParams extends EncodingParameter {
   String getIndexingType();
 
   @ParameterDescription(valueName = "parsingType", description = "Parsing type: DEEP, SHALLOW, DEPENDENCY.")
-  @OptionalParameter (defaultValue = "SHALLOW")
   String getParsingType();
-  
+
+  @ParameterDescription(valueName = "contentType", description = "Content type: ARTICLE, SHORTTEXT.")
+  String getContentType();
+
   @ParameterDescription(valueName = "recordDelimiters", description = "(Optional, Default=30) Record delimiter characters dividing records in the file. If multiple characters are used, separate them by a comma, e.g. 13,10 stands for <CR><LF>. Use delimiter 30 (=<RS>) to prevent regular new line delimiters splitting text files.")
   @OptionalParameter (defaultValue = "30")
   String getRecordDelimiters();

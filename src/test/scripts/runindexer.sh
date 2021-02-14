@@ -1,7 +1,7 @@
 
-if [ $# != 2 ]
+if [ $# != 3 ]
 then
-  echo "Invalid number of parameters. Need 2: IndexingType ParsingType"
+  echo "Invalid number of parameters. Need 3: IndexingType ParsingType ContentType"
   exit 1
 else
   if [ "$1" != "FULLINDEX" ] && [ "$1" != "TOPSENTIMENTS" ]
@@ -19,6 +19,15 @@ else
   else
     PARSINGTYPE=$2
   fi
+
+  if [ "$3" != "ARTICLE" ] && [ "$3" != "SHORTTEXT" ]
+  then
+    echo "Invalid 3nd parameter value. Use one of {ARTICLE | SHORTTEXT}"
+    exit 1
+  else
+    CONTENTTYPE=$3
+  fi
+
 fi
 
 MAVEN_OPTS="-Xmx2g -Xss4m"
@@ -34,6 +43,6 @@ for f in $(find $INPUT_DIR -name '[^.]*.txt'); do
     #echo $FILENAME $UPPER_DIR $NEWNAME
     mvn exec:java \
         -Dexec.mainClass=sirocco.cmdline.CLI \
-        -Dexec.args="Indexer -inputFile \"$f\" -outputFile \"$NEWNAME\" -indexingType \"$INDEXINGTYPE\" -parsingType \"$PARSINGTYPE\" "
+        -Dexec.args="Indexer -inputFile \"$f\" -outputFile \"$NEWNAME\" -indexingType \"$INDEXINGTYPE\" -parsingType \"$PARSINGTYPE\" -contentType \"$CONTENTTYPE\" "
 done
 

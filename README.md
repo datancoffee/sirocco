@@ -40,7 +40,7 @@ The steps for configuring and running the Sirocco Indexer locally are as follows
 
 #### Installing Prerequisites
 
-Install tools necessary for compiling and deploying the code in this sample, if not already on your system, specifically git,  Java and Maven:
+Install tools necessary for compiling and deploying the code in this sample, if not already on your system, specifically git, Java and Maven:
 
 * Install [`git`](https://git-scm.com/downloads). If you have Homebrew, the command is
 ```
@@ -104,7 +104,7 @@ mvn clean package
 mvn install:install-file -Dfile=target/sirocco-sa-x.y.z.jar -DpomFile=pom.xml
 ```
 
-The build process will create a shaded jar sirocco-sa-x.y.z.jar that contains all dependencies (including OpenNLP packages) in the target directory. This jar does not contain model files and these need to be downloaded separately (see next step). 
+The build process will create a shaded jar sirocco-sa-x.y.z.jar that contains all dependencies (including OpenNLP packages) in the target directory. This jar does not contain model files and these need to be downloaded separately (see one of the previous steps). 
 
 
 #### Running Included Test Datasets and Your Own Tests
@@ -151,7 +151,7 @@ You can have multiple documents in a .txt file, but they need to be separated by
 To run the test script, execute the following command in shell 
 
 ```
-src/test/scripts/runindexer.sh TOPSENTIMENTS SHALLOW
+src/test/scripts/runindexer.sh TOPSENTIMENTS SHALLOW ARTICLE
 ```
 
 The results of Sirocco indexing can be reviewed in the src/test/resources/out/articles-col1 folder
@@ -159,14 +159,19 @@ The results of Sirocco indexing can be reviewed in the src/test/resources/out/ar
 ls src/test/resources/out/articles-col1
 ```
 
-The runindexer.sh test script accepts two parameters - the **Indexing Type** and **Parsing Type**. For indexing type the acceptable values are FULLINDEX and TOPSENTIMENTS. When TOPSENTIMENTS is specified, the Indexer will select the top 4 sentence chunks (a few sequential sentences in text that have the same sentiement valence) in input text and output them in the output file. When FULLINDEX is selected, all sentence chunks will be output. 
+The runindexer.sh test script accepts 3 parameters - the **Indexing Type**, the **Parsing Type** and **Content Type**. 
 
-For parsing type the acceptable values are DEEP, SHALLOW, DEPENDENCY. Parsing type refers to the type of a language tree and subsequent traversing of that tree when connecting entities with sentiments. DEEP and SHALLOW parsing types will cause Sirocco to use [constituency-based trees](https://en.wikipedia.org/wiki/Parse_tree#Constituency-based_parse_trees) and DEPENDENCY parsing type will lead to Sirrocco using [dependency-based trees](https://en.wikipedia.org/wiki/Parse_tree#Dependency-based_parse_trees).
+The **Indexing Type** parameter describes what the output of the indexing operation should be. The acceptable values are FULLINDEX and TOPSENTIMENTS. When TOPSENTIMENTS is specified, the Indexer will select the top 4 sentence chunks (a few sequential sentences in text that have the same sentiement valence) in input text and output them in the output file. When FULLINDEX is selected, all sentence chunks will be output. 
 
-```
-./src/test/scripts/runindexer.sh FULLINDEX DEEP
-```
+The **Parsing Type** parameter determines what kind of sentence trees and what traversing strategy the Indexer will select when connecting Entities with Sentiments. The acceptable values are DEEP, SHALLOW, DEPENDENCY. DEEP and SHALLOW parsing types will cause Sirocco to use [constituency-based trees](https://en.wikipedia.org/wiki/Parse_tree#Constituency-based_parse_trees) and DEPENDENCY parsing type will lead to Sirrocco using [dependency-based trees](https://en.wikipedia.org/wiki/Parse_tree#Dependency-based_parse_trees).
+
 Note that while DEEP parsing provides the best quality associations of entities and sentiments, this parsing mode is still work-in-progress (as of Feb 2021). Currently, the SHALLOW parsing mode is the most tested mode. The DEPENDENCY parsing mode is also work-in-progress.
+
+The **Content Type** provides hints to the Sirocco Indexer what kind of textual artifacts it is dealing with. The possible values are ARTICLE or SHORTTEXT. SHORTTEXT covers short messages on Twitter or SMS or one-line product reviews, usually less than 140 chars. ARTICLE represents pieces of text usually longer than 140 characters. The difference between the content types will be in the final steps of indexing. For SHORTTEXT, Sirocco will chunk all sentences it finds into one Chunk, while for ARTICLE it will chunk sentences into one or many Chunks depending on their Sentiment Valence (Orientation). If in doubt how long your text is, chose the ARTICLE content type.
+
+```
+./src/test/scripts/runindexer.sh FULLINDEX DEEP ARTICLE
+```
 
 
 ##### Processing CSV files
@@ -181,10 +186,10 @@ SentenceId,PhraseId,Phrase,Sentiment
 179,4684,"Beautifully crafted , engaging filmmaking that should attract upscale audiences hungry for quality and a nostalgic , twisty yarn that will keep them guessing .",4
 ```
 
-Because of this, when processing CSV files you have to specify 4 parameters: Indexing Type, Parsing Type, Item Id Column Index, and Text Column Index. Here is an example that does Shallow parsing of the above CSV file, and sets the Item ID column Index to 1 (meaning, it's the second column in the file, labelled PhraseId), and specifies the Text column Index as 2 (meaning, as the third column in the file, labelled Phrase).
+Because of this, when processing CSV files you have to specify 5 parameters: Indexing Type, Parsing Type, Content Type, Item Id Column Index, and Text Column Index. Here is an example that does Shallow parsing of the above CSV file, and sets the Item ID column Index to 1 (meaning, it's the second column in the file, labelled PhraseId), and specifies the Text column Index as 2 (meaning, as the third column in the file, labelled Phrase). Because most text pieces in this dataset are one-line or one-sentence movie reviews, we will use the SHORTTEXT content type parameter. Note that if you are dealing with anything but tweets or 1-2 sentence paragraphs, it is better to use the ARTICLE content type when doing SHALLOW parsing. When doiong DEEP parsing, getting content type right is less important.
  
 ```
-./src/test/scripts/runindexercsv.sh FULLINDEX SHALLOW 1 2
+./src/test/scripts/runindexercsv.sh FULLINDEX SHALLOW SHORTTEXT 1 2
 ```
 
 The results of Sirocco indexing can be reviewed in the src/test/resources/out/kaggle-rotten-tomato folder
@@ -196,7 +201,7 @@ ls src/test/resources/out/kaggle-rotten-tomato
 Note the following when processing CSV files:
 - The indexer expects that there is a header row. All rows starting with the second one will be processed as documents.
 - The column indexes for Item ID and Text columns are zero-based. The first column has the index of 0
-- The Item ID does not have to be numeric. The value inside that column will be interpreted as a string 
+- The values of Item ID do not have to be numeric. The value inside that column will be interpreted as a string 
 - The Sirocco indexer is capable of handling text pieces that have line breaks in them. These text pieces need to be put in quotes.
 
 

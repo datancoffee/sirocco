@@ -65,7 +65,8 @@ public class IndexerTool extends BasicCmdLineTool {
     Charset encoding = params.getEncoding();
     IndexingConsts.IndexingType indexingType =  IndexingConsts.IndexingType.valueOf(params.getIndexingType());
     IndexingConsts.ParseDepth parsingType =  IndexingConsts.ParseDepth.valueOf(params.getParsingType());
-    
+    IndexingConsts.ContentType contentType =  IndexingConsts.ContentType.valueOf(params.getContentType());
+
     String recordDelimiters = params.getRecordDelimiters();
     Boolean readAsCSV = params.getReadAsCSV();
 
@@ -93,9 +94,9 @@ public class IndexerTool extends BasicCmdLineTool {
 
           ContentIndex contentindex = new ContentIndex(inputFileContents,
         		  indexingType,
-                  IndexingConsts.ContentType.ARTICLE,
+                  contentType,
+                  parsingType,
                   now);
-          contentindex.ContentParseDepth = parsingType; //TODO: Move to constructor
           docList.add(contentindex);
 
       } else {
@@ -112,12 +113,12 @@ public class IndexerTool extends BasicCmdLineTool {
 			String documentCollectionId = DOC_COL_ID_CSV_FILE;
 			String collectionItemId = (collectionItemIdIdx!=null)? record.get(collectionItemIdIdx): null;
 			
-			ContentIndex contentindex = new ContentIndex(/*content*/ text, /*indexingType*/ indexingType, 
-		    		/*cueType*/ IndexingConsts.ContentType.ARTICLE, /*processingTime*/ now,
+			ContentIndex contentindex = new ContentIndex(/*content*/ text,
+                    /*indexingType*/ indexingType, /*cueType*/ contentType,
+                    /*parseDepth*/ parsingType, /*processingTime*/ now,
 		    	    /*url*/ null, /*publicationTime*/ null,  /*title*/ null, /*author*/ null, 
 		    	    /*documentCollectionId*/ documentCollectionId, /*collectionItemId*/ collectionItemId,
 		    	    /*parentUrl*/ null, /*parentPubTime*/ null, /*metaFields*/ null);
-			contentindex.ContentParseDepth = parsingType; //TODO: Move to constructor
 			docList.add(contentindex);
 	          
 		}
